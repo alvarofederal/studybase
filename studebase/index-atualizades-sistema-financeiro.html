@@ -1,0 +1,707 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atualidades do Mercado Financeiro</title>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e3a5f;
+    --accent: #00d4ff;
+    --accent2: #7c3aed;
+    --accent3: #10b981;
+    --accent4: #f59e0b;
+    --danger: #ef4444;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --gold: #fbbf24;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Segoe UI',system-ui,sans-serif; overflow-x:hidden; }
+
+  /* PARTICLES */
+  #particles { position:fixed; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:0; }
+
+  /* HEADER */
+  .hero { position:relative; z-index:1; text-align:center; padding:60px 20px 40px; }
+  .hero-badge { display:inline-block; background:linear-gradient(135deg,#00d4ff22,#7c3aed22); border:1px solid var(--border); border-radius:50px; padding:6px 18px; font-size:.75rem; color:var(--accent); letter-spacing:2px; text-transform:uppercase; margin-bottom:20px; }
+  .hero h1 { font-size:clamp(1.8rem,5vw,3.2rem); font-weight:800; background:linear-gradient(135deg,#00d4ff,#7c3aed,#10b981); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; line-height:1.2; margin-bottom:12px; }
+  .hero p { color:var(--muted); font-size:1rem; max-width:580px; margin:0 auto 30px; line-height:1.7; }
+
+  /* PROGRESS BAR */
+  .progress-wrap { max-width:700px; margin:0 auto 10px; }
+  .progress-label { display:flex; justify-content:space-between; font-size:.8rem; color:var(--muted); margin-bottom:8px; }
+  .progress-track { background:#1e3a5f33; border-radius:50px; height:8px; overflow:hidden; }
+  .progress-fill { height:100%; background:linear-gradient(90deg,#00d4ff,#7c3aed); border-radius:50px; transition:width .6s ease; width:0%; }
+
+  /* STATS BAR */
+  .stats { display:flex; justify-content:center; gap:30px; flex-wrap:wrap; padding:20px; position:relative; z-index:1; }
+  .stat { text-align:center; }
+  .stat-num { font-size:1.8rem; font-weight:800; color:var(--accent); display:block; }
+  .stat-label { font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+
+  /* NAV TABS */
+  .nav { display:flex; justify-content:center; flex-wrap:wrap; gap:8px; padding:20px; position:relative; z-index:1; }
+  .nav-btn { background:var(--surface); border:1px solid var(--border); color:var(--muted); padding:10px 18px; border-radius:50px; cursor:pointer; font-size:.8rem; font-weight:600; transition:all .3s; display:flex; align-items:center; gap:6px; }
+  .nav-btn:hover { border-color:var(--accent); color:var(--accent); }
+  .nav-btn.active { background:linear-gradient(135deg,#00d4ff22,#7c3aed22); border-color:var(--accent); color:var(--accent); }
+  .nav-btn .check { color:var(--accent3); display:none; }
+  .nav-btn.done .check { display:inline; }
+
+  /* MAIN */
+  main { max-width:900px; margin:0 auto; padding:20px; position:relative; z-index:1; }
+
+  /* VIEWS */
+  .view { display:none; }
+  .view.active { display:block; }
+
+  /* BLOCK CARD */
+  .block-header { display:flex; align-items:flex-start; gap:20px; margin-bottom:30px; }
+  .block-icon { width:60px; height:60px; border-radius:16px; display:flex; align-items:center; justify-content:center; font-size:1.8rem; flex-shrink:0; }
+  .block-meta h2 { font-size:1.5rem; font-weight:800; margin-bottom:4px; }
+  .block-meta p { color:var(--muted); font-size:.9rem; }
+  .block-meta .hours { display:inline-block; background:var(--surface2); border:1px solid var(--border); border-radius:50px; padding:2px 12px; font-size:.75rem; color:var(--accent4); margin-top:6px; }
+
+  /* TOPICS */
+  .topics-grid { display:grid; gap:14px; margin-bottom:30px; }
+  .topic-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px; cursor:pointer; transition:all .3s; position:relative; overflow:hidden; }
+  .topic-card::before { content:''; position:absolute; top:0; left:0; width:3px; height:100%; background:var(--accent); opacity:0; transition:opacity .3s; }
+  .topic-card:hover { border-color:var(--accent); transform:translateX(4px); }
+  .topic-card:hover::before { opacity:1; }
+  .topic-card.expanded { border-color:var(--accent); background:var(--surface2); }
+  .topic-card.expanded::before { opacity:1; }
+  .topic-title { display:flex; align-items:center; justify-content:space-between; }
+  .topic-title h3 { font-size:.95rem; font-weight:700; }
+  .topic-tag { font-size:.65rem; padding:2px 10px; border-radius:50px; font-weight:700; text-transform:uppercase; letter-spacing:1px; }
+  .tag-hot { background:#ef444422; color:#ef4444; border:1px solid #ef444444; }
+  .tag-med { background:#f59e0b22; color:#f59e0b; border:1px solid #f59e0b44; }
+  .tag-ok { background:#10b98122; color:#10b981; border:1px solid #10b98144; }
+  .topic-body { display:none; margin-top:14px; padding-top:14px; border-top:1px solid var(--border); }
+  .topic-card.expanded .topic-body { display:block; }
+  .topic-body p { color:#94a3b8; font-size:.88rem; line-height:1.8; }
+  .topic-body ul { color:#94a3b8; font-size:.88rem; line-height:2; margin-top:8px; padding-left:20px; }
+  .topic-body .key-point { background:linear-gradient(135deg,#00d4ff11,#7c3aed11); border:1px solid var(--border); border-radius:8px; padding:10px 14px; margin-top:10px; font-size:.82rem; color:var(--accent); }
+
+  /* MISTAKES */
+  .mistakes { display:grid; gap:12px; margin-bottom:30px; }
+  .mistake-card { background:var(--surface); border:1px solid #ef444433; border-radius:14px; padding:18px; display:flex; gap:14px; }
+  .mistake-num { width:32px; height:32px; background:#ef444422; border:1px solid #ef444444; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:.8rem; font-weight:800; color:var(--danger); flex-shrink:0; margin-top:2px; }
+  .mistake-text h4 { font-size:.9rem; font-weight:700; color:#fca5a5; margin-bottom:4px; }
+  .mistake-text p { font-size:.82rem; color:var(--muted); line-height:1.7; }
+
+  /* QUIZ */
+  .quiz-wrap { background:var(--surface); border:1px solid var(--border); border-radius:18px; padding:28px; margin-bottom:20px; }
+  .quiz-q { font-size:1rem; font-weight:700; margin-bottom:20px; line-height:1.6; }
+  .quiz-q .q-num { color:var(--accent); font-size:.8rem; display:block; margin-bottom:6px; text-transform:uppercase; letter-spacing:1px; }
+  .quiz-opts { display:grid; gap:10px; }
+  .quiz-opt { background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:14px 18px; cursor:pointer; font-size:.88rem; transition:all .3s; text-align:left; color:var(--text); width:100%; }
+  .quiz-opt:hover:not(:disabled) { border-color:var(--accent); background:#00d4ff11; }
+  .quiz-opt.correct { border-color:var(--accent3); background:#10b98122; color:#6ee7b7; }
+  .quiz-opt.wrong { border-color:var(--danger); background:#ef444422; color:#fca5a5; }
+  .quiz-opt:disabled { cursor:default; }
+  .quiz-feedback { margin-top:16px; padding:14px; border-radius:10px; font-size:.88rem; line-height:1.7; display:none; }
+  .quiz-feedback.show { display:block; }
+  .quiz-feedback.ok { background:#10b98122; border:1px solid #10b98144; color:#6ee7b7; }
+  .quiz-feedback.nok { background:#ef444422; border:1px solid #ef444444; color:#fca5a5; }
+  .quiz-nav { display:flex; align-items:center; justify-content:space-between; margin-top:20px; }
+  .quiz-score { font-size:.85rem; color:var(--muted); }
+  .btn { padding:11px 24px; border-radius:50px; border:none; cursor:pointer; font-size:.85rem; font-weight:700; transition:all .3s; }
+  .btn-primary { background:linear-gradient(135deg,#00d4ff,#7c3aed); color:#fff; }
+  .btn-primary:hover { opacity:.9; transform:translateY(-1px); }
+  .btn-ghost { background:transparent; border:1px solid var(--border); color:var(--muted); }
+  .btn-ghost:hover { border-color:var(--accent); color:var(--accent); }
+  .btn:disabled { opacity:.4; cursor:default; transform:none; }
+
+  /* FLASHCARDS */
+  .flashcard-wrap { perspective:1000px; margin-bottom:30px; }
+  .flashcard { width:100%; height:220px; position:relative; transform-style:preserve-3d; transition:transform .6s; cursor:pointer; }
+  .flashcard.flipped { transform:rotateY(180deg); }
+  .card-face { position:absolute; width:100%; height:100%; backface-visibility:hidden; border-radius:18px; padding:30px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .card-front { background:linear-gradient(135deg,var(--surface),var(--surface2)); border:1px solid var(--border); }
+  .card-back { background:linear-gradient(135deg,#00d4ff15,#7c3aed15); border:1px solid #00d4ff44; transform:rotateY(180deg); }
+  .card-front .card-hint { font-size:.72rem; color:var(--muted); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; }
+  .card-front .card-q { font-size:1.1rem; font-weight:700; }
+  .card-back .card-a { font-size:.9rem; line-height:1.8; color:#94a3b8; }
+  .card-back .card-a strong { color:var(--accent); }
+  .flashcard-nav { display:flex; align-items:center; justify-content:center; gap:20px; }
+  .card-counter { font-size:.85rem; color:var(--muted); }
+
+  /* FOCUS VIEW */
+  .focus-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:30px; }
+  @media(max-width:600px){ .focus-grid { grid-template-columns:1fr; } }
+  .focus-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:20px; }
+  .focus-card h3 { font-size:.85rem; color:var(--accent); text-transform:uppercase; letter-spacing:1px; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+  .focus-card ul { list-style:none; }
+  .focus-card ul li { font-size:.85rem; color:var(--muted); padding:6px 0; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; line-height:1.5; }
+  .focus-card ul li:last-child { border:none; }
+  .focus-card ul li::before { content:'→'; color:var(--accent); font-weight:800; flex-shrink:0; }
+  .focus-card.danger { border-color:#ef444433; }
+  .focus-card.danger h3 { color:var(--danger); }
+  .focus-card.danger ul li::before { content:'✗'; color:var(--danger); }
+  .focus-card.success { border-color:#10b98133; }
+  .focus-card.success h3 { color:var(--accent3); }
+
+  /* RESOURCES */
+  .resources { display:grid; gap:12px; margin-bottom:30px; }
+  .resource-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:16px 20px; display:flex; align-items:center; gap:16px; }
+  .resource-icon { width:42px; height:42px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; flex-shrink:0; }
+  .resource-info h4 { font-size:.9rem; font-weight:700; margin-bottom:2px; }
+  .resource-info p { font-size:.78rem; color:var(--muted); }
+  .resource-tag { margin-left:auto; font-size:.65rem; padding:3px 10px; border-radius:50px; font-weight:700; white-space:nowrap; }
+
+  /* COMPLETE MODAL */
+  .modal-overlay { position:fixed; inset:0; background:#000a; backdrop-filter:blur(8px); z-index:100; display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity .3s; }
+  .modal-overlay.show { opacity:1; pointer-events:all; }
+  .modal { background:var(--surface); border:1px solid var(--border); border-radius:24px; padding:40px; text-align:center; max-width:420px; width:90%; transform:scale(.9); transition:transform .3s; }
+  .modal-overlay.show .modal { transform:scale(1); }
+  .modal-emoji { font-size:4rem; margin-bottom:16px; display:block; }
+  .modal h2 { font-size:1.5rem; font-weight:800; margin-bottom:8px; background:linear-gradient(135deg,#00d4ff,#7c3aed); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+  .modal p { color:var(--muted); font-size:.9rem; line-height:1.7; margin-bottom:24px; }
+  .modal-score { font-size:2.5rem; font-weight:800; color:var(--gold); margin-bottom:4px; }
+  .modal-score-label { font-size:.8rem; color:var(--muted); margin-bottom:20px; }
+
+  /* TIMER */
+  .timer-wrap { display:flex; justify-content:center; gap:6px; margin-bottom:30px; }
+  .timer-block { background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 14px; text-align:center; min-width:56px; }
+  .timer-num { font-size:1.4rem; font-weight:800; color:var(--accent); display:block; font-variant-numeric:tabular-nums; }
+  .timer-lbl { font-size:.6rem; color:var(--muted); text-transform:uppercase; }
+  .timer-sep { font-size:1.4rem; font-weight:800; color:var(--muted); padding-top:10px; }
+
+  /* SECTION TITLE */
+  .section-title { font-size:.75rem; color:var(--muted); text-transform:uppercase; letter-spacing:2px; margin-bottom:16px; display:flex; align-items:center; gap:10px; }
+  .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  /* TOAST */
+  .toast { position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(20px); background:var(--surface2); border:1px solid var(--border); border-radius:50px; padding:12px 24px; font-size:.85rem; z-index:200; opacity:0; transition:all .3s; white-space:nowrap; }
+  .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast.green { border-color:#10b98144; color:#6ee7b7; }
+  .toast.blue { border-color:#00d4ff44; color:#00d4ff; }
+</style>
+</head>
+<body>
+
+<canvas id="particles"></canvas>
+
+<div class="hero">
+  <div class="hero-badge">📈 Guia Interativo de Estudos</div>
+  <h1>Atualidades do<br>Mercado Financeiro</h1>
+  <p>Aprenda em <strong>20 horas</strong> o que transforma o sistema financeiro hoje. Estude por blocos, faça quizzes e acompanhe seu progresso em tempo real.</p>
+  <div class="progress-wrap">
+    <div class="progress-label"><span>Progresso geral</span><span id="pct">0%</span></div>
+    <div class="progress-track"><div class="progress-fill" id="pbar"></div></div>
+  </div>
+</div>
+
+<div class="stats">
+  <div class="stat"><span class="stat-num" id="s-blocos">0/5</span><span class="stat-label">Blocos concluídos</span></div>
+  <div class="stat"><span class="stat-num" id="s-quiz">0</span><span class="stat-label">Acertos no quiz</span></div>
+  <div class="stat"><span class="stat-num" id="s-cards">0</span><span class="stat-label">Flashcards vistos</span></div>
+  <div class="stat"><span class="stat-num" id="s-horas">20h</span><span class="stat-label">Meta de estudo</span></div>
+</div>
+
+<div class="nav">
+  <button class="nav-btn active" onclick="showView('home')" id="nb-home">🏠 Início</button>
+  <button class="nav-btn" onclick="showView('b1')" id="nb-b1"><span class="check">✓</span>⚡ Bloco 1</button>
+  <button class="nav-btn" onclick="showView('b2')" id="nb-b2"><span class="check">✓</span>🚀 Bloco 2</button>
+  <button class="nav-btn" onclick="showView('b3')" id="nb-b3"><span class="check">✓</span>🔗 Bloco 3</button>
+  <button class="nav-btn" onclick="showView('b4')" id="nb-b4"><span class="check">✓</span>🤖 Bloco 4</button>
+  <button class="nav-btn" onclick="showView('b5')" id="nb-b5"><span class="check">✓</span>🌱 Bloco 5</button>
+  <button class="nav-btn" onclick="showView('quiz')" id="nb-quiz">🎯 Quiz Final</button>
+  <button class="nav-btn" onclick="showView('flash')" id="nb-flash">🃏 Flashcards</button>
+  <button class="nav-btn" onclick="showView('focus')" id="nb-focus">🎯 Foco</button>
+</div>
+
+<main>
+
+<!-- HOME -->
+<div class="view active" id="view-home">
+  <div class="timer-wrap">
+    <div class="timer-block"><span class="timer-num" id="th">00</span><span class="timer-lbl">horas</span></div>
+    <div class="timer-sep">:</div>
+    <div class="timer-block"><span class="timer-num" id="tm">00</span><span class="timer-lbl">min</span></div>
+    <div class="timer-sep">:</div>
+    <div class="timer-block"><span class="timer-num" id="ts">00</span><span class="timer-lbl">seg</span></div>
+  </div>
+
+  <div class="section-title">Roteiro de 20 horas</div>
+  <div style="display:grid;gap:14px;margin-bottom:30px;">
+    <div class="topic-card" onclick="showView('b1')">
+      <div class="topic-title">
+        <h3>⚡ Bloco 1 — Nova Infraestrutura Financeira <span style="color:var(--muted);font-weight:400;font-size:.8rem;margin-left:8px;">4h</span></h3>
+        <span class="topic-tag tag-hot">🔥 Mais cobrado</span>
+      </div>
+      <div style="color:var(--muted);font-size:.82rem;margin-top:8px;">Pix, Open Finance, SPB e Real Digital (Drex)</div>
+    </div>
+    <div class="topic-card" onclick="showView('b2')">
+      <div class="topic-title">
+        <h3>🚀 Bloco 2 — Fintechs e Novos Modelos <span style="color:var(--muted);font-weight:400;font-size:.8rem;margin-left:8px;">4h</span></h3>
+        <span class="topic-tag tag-hot">🔥 Alta frequência</span>
+      </div>
+      <div style="color:var(--muted);font-size:.82rem;margin-top:8px;">Fintechs, bancos digitais, BaaS, Embedded Finance, Big Techs</div>
+    </div>
+    <div class="topic-card" onclick="showView('b3')">
+      <div class="topic-title">
+        <h3>🔗 Bloco 3 — Ativos Digitais <span style="color:var(--muted);font-weight:400;font-size:.8rem;margin-left:8px;">3h</span></h3>
+        <span class="topic-tag tag-med">⚡ Médio</span>
+      </div>
+      <div style="color:var(--muted);font-size:.82rem;margin-top:8px;">Criptomoedas, tokenização, stablecoins, regulação brasileira</div>
+    </div>
+    <div class="topic-card" onclick="showView('b4')">
+      <div class="topic-title">
+        <h3>🤖 Bloco 4 — IA, Dados e Crédito <span style="color:var(--muted);font-weight:400;font-size:.8rem;margin-left:8px;">5h</span></h3>
+        <span class="topic-tag tag-hot">🔥 Crescendo</span>
+      </div>
+      <div style="color:var(--muted);font-size:.82rem;margin-top:8px;">LGPD, Cadastro Positivo, IA nos bancos, segurança cibernética</div>
+    </div>
+    <div class="topic-card" onclick="showView('b5')">
+      <div class="topic-title">
+        <h3>🌱 Bloco 5 — ESG e Agenda BC# <span style="color:var(--muted);font-weight:400;font-size:.8rem;margin-left:8px;">4h</span></h3>
+        <span class="topic-tag tag-med">⚡ Médio</span>
+      </div>
+      <div style="color:var(--muted);font-size:.82rem;margin-top:8px;">ESG, Agenda BC#, inclusão financeira, sandbox regulatório</div>
+    </div>
+  </div>
+
+  <div class="section-title">⚠️ Maiores erros de iniciantes</div>
+  <div class="mistakes">
+    <div class="mistake-card"><div class="mistake-num">1</div><div class="mistake-text"><h4>Confundir Pix com TED modernizado</h4><p>O Pix é operado pelo Banco Central, funciona 24/7 e é gratuito por regulação. Ele criou uma nova infraestrutura — não é só velocidade.</p></div></div>
+    <div class="mistake-card"><div class="mistake-num">2</div><div class="mistake-text"><h4>Tratar Open Finance como "só dados"</h4><p>É uma política antimonopólio. O cliente leva seu histórico a outro banco e consegue crédito melhor. Entender a lógica resolve questões difíceis.</p></div></div>
+    <div class="mistake-card"><div class="mistake-num">3</div><div class="mistake-text"><h4>Fintech = banco digital</h4><p>Fintech é qualquer empresa com tecnologia financeira — maquininha, investimentos, seguro. Banco digital é só uma categoria dentro das fintechs.</p></div></div>
+    <div class="mistake-card"><div class="mistake-num">4</div><div class="mistake-text"><h4>Ignorar a Agenda BC#</h4><p>Os quatro pilares (inclusão, competitividade, transparência, educação financeira) explicam por que o Pix e o Open Finance existem. Cai direto em prova.</p></div></div>
+    <div class="mistake-card"><div class="mistake-num">5</div><div class="mistake-text"><h4>Estudar apostila desatualizada</h4><p>Esta disciplina envelhece. O Drex evoluiu, o Open Finance avançou de fase. Complemente sempre com o site do Banco Central.</p></div></div>
+    <div class="mistake-card"><div class="mistake-num">6</div><div class="mistake-text"><h4>Não conectar ESG com crédito</h4><p>ESG não é só "meio ambiente". Ele está nas concessões de crédito, análise de risco climático em carteiras bancárias e emissão de green bonds.</p></div></div>
+  </div>
+</div>
+
+<!-- BLOCOS -->
+<div class="view" id="view-b1">
+  <div class="block-header">
+    <div class="block-icon" style="background:linear-gradient(135deg,#00d4ff22,#00d4ff44);">⚡</div>
+    <div class="block-meta">
+      <h2>Nova Infraestrutura Financeira</h2>
+      <p>Como o dinheiro circula hoje no Brasil?</p>
+      <span class="hours">⏱ 4 horas</span>
+    </div>
+  </div>
+  <div class="section-title">Tópicos do bloco</div>
+  <div class="topics-grid" id="topics-b1"></div>
+  <button class="btn btn-primary" onclick="markDone('b1')">✓ Marcar bloco como concluído</button>
+</div>
+
+<div class="view" id="view-b2">
+  <div class="block-header">
+    <div class="block-icon" style="background:linear-gradient(135deg,#7c3aed22,#7c3aed44);">🚀</div>
+    <div class="block-meta">
+      <h2>Fintechs e Novos Modelos</h2>
+      <p>Quem está desafiando os bancos tradicionais?</p>
+      <span class="hours">⏱ 4 horas</span>
+    </div>
+  </div>
+  <div class="section-title">Tópicos do bloco</div>
+  <div class="topics-grid" id="topics-b2"></div>
+  <button class="btn btn-primary" onclick="markDone('b2')">✓ Marcar bloco como concluído</button>
+</div>
+
+<div class="view" id="view-b3">
+  <div class="block-header">
+    <div class="block-icon" style="background:linear-gradient(135deg,#f59e0b22,#f59e0b44);">🔗</div>
+    <div class="block-meta">
+      <h2>Ativos Digitais</h2>
+      <p>O que são esses novos produtos financeiros?</p>
+      <span class="hours">⏱ 3 horas</span>
+    </div>
+  </div>
+  <div class="section-title">Tópicos do bloco</div>
+  <div class="topics-grid" id="topics-b3"></div>
+  <button class="btn btn-primary" onclick="markDone('b3')">✓ Marcar bloco como concluído</button>
+</div>
+
+<div class="view" id="view-b4">
+  <div class="block-header">
+    <div class="block-icon" style="background:linear-gradient(135deg,#10b98122,#10b98144);">🤖</div>
+    <div class="block-meta">
+      <h2>IA, Dados e Crédito</h2>
+      <p>Como a tecnologia mudou a relação banco-cliente?</p>
+      <span class="hours">⏱ 5 horas</span>
+    </div>
+  </div>
+  <div class="section-title">Tópicos do bloco</div>
+  <div class="topics-grid" id="topics-b4"></div>
+  <button class="btn btn-primary" onclick="markDone('b4')">✓ Marcar bloco como concluído</button>
+</div>
+
+<div class="view" id="view-b5">
+  <div class="block-header">
+    <div class="block-icon" style="background:linear-gradient(135deg,#06b6d422,#06b6d444);">🌱</div>
+    <div class="block-meta">
+      <h2>ESG e Agenda BC#</h2>
+      <p>Para onde o mercado financeiro está indo?</p>
+      <span class="hours">⏱ 4 horas</span>
+    </div>
+  </div>
+  <div class="section-title">Tópicos do bloco</div>
+  <div class="topics-grid" id="topics-b5"></div>
+  <button class="btn btn-primary" onclick="markDone('b5')">✓ Marcar bloco como concluído</button>
+</div>
+
+<!-- QUIZ FINAL -->
+<div class="view" id="view-quiz">
+  <div style="text-align:center;margin-bottom:30px;">
+    <div style="font-size:2.5rem;margin-bottom:10px;">🎯</div>
+    <h2 style="font-size:1.5rem;font-weight:800;margin-bottom:6px;">Quiz Final</h2>
+    <p style="color:var(--muted);font-size:.9rem;">10 questões no estilo de concurso bancário</p>
+  </div>
+  <div id="quiz-container"></div>
+</div>
+
+<!-- FLASHCARDS -->
+<div class="view" id="view-flash">
+  <div style="text-align:center;margin-bottom:24px;">
+    <div style="font-size:2rem;margin-bottom:8px;">🃏</div>
+    <h2 style="font-size:1.4rem;font-weight:800;margin-bottom:4px;">Flashcards</h2>
+    <p style="color:var(--muted);font-size:.85rem;">Clique no card para revelar a resposta</p>
+  </div>
+  <div class="flashcard-wrap" id="fc-wrap">
+    <div class="flashcard" id="flashcard" onclick="flipCard()">
+      <div class="card-face card-front">
+        <div class="card-hint">Clique para revelar</div>
+        <div class="card-q" id="fc-q">Carregando...</div>
+      </div>
+      <div class="card-face card-back">
+        <div class="card-a" id="fc-a">...</div>
+      </div>
+    </div>
+  </div>
+  <div class="flashcard-nav">
+    <button class="btn btn-ghost" onclick="prevCard()">← Anterior</button>
+    <span class="card-counter" id="fc-counter">1 / 12</span>
+    <button class="btn btn-ghost" onclick="nextCard()">Próximo →</button>
+  </div>
+</div>
+
+<!-- FOCO -->
+<div class="view" id="view-focus">
+  <div style="text-align:center;margin-bottom:30px;">
+    <div style="font-size:2rem;margin-bottom:8px;">🎯</div>
+    <h2 style="font-size:1.4rem;font-weight:800;margin-bottom:4px;">O que focar e o que ignorar</h2>
+    <p style="color:var(--muted);font-size:.85rem;">Guia de priorização para as suas 20 horas</p>
+  </div>
+  <div class="focus-grid">
+    <div class="focus-card success">
+      <h3>✅ Foco máximo</h3>
+      <ul>
+        <li>Pix — arquitetura e modalidades</li>
+        <li>Open Finance — fases e lógica</li>
+        <li>Agenda BC# — 4 pilares</li>
+        <li>Fintechs vs bancos digitais</li>
+        <li>LGPD no contexto bancário</li>
+        <li>Lavagem de dinheiro — 3 fases</li>
+        <li>Selic e política monetária</li>
+        <li>CMN vs Banco Central</li>
+      </ul>
+    </div>
+    <div class="focus-card danger">
+      <h3>✗ Ignorar por ora</h3>
+      <ul>
+        <li>Fórmulas de precificação de títulos</li>
+        <li>Derivativos e swaps em detalhe</li>
+        <li>Tarifas bancárias específicas</li>
+        <li>Regulação contábil (COSIF)</li>
+        <li>Basileia III — índices exatos</li>
+        <li>Regulação europeia (PSD2, MiCA)</li>
+        <li>NFTs além do conceito</li>
+        <li>Cooperativas de crédito em detalhe</li>
+      </ul>
+    </div>
+    <div class="focus-card" style="grid-column:1/-1;">
+      <h3>📊 Peso por assunto nas provas recentes (BB/CEF)</h3>
+      <div style="margin-top:10px;display:grid;gap:8px;">
+        <div id="bar-data"></div>
+      </div>
+    </div>
+  </div>
+  <div class="section-title">Fontes primárias obrigatórias</div>
+  <div class="resources">
+    <div class="resource-card"><div class="resource-icon" style="background:#00d4ff22;">🏛️</div><div class="resource-info"><h4>bcb.gov.br</h4><p>Agenda BC#, Pix, Open Finance, Relatório de Estabilidade Financeira</p></div><span class="resource-tag" style="background:#10b98122;color:#10b981;border:1px solid #10b98133;">Obrigatório</span></div>
+    <div class="resource-card"><div class="resource-icon" style="background:#7c3aed22;">📊</div><div class="resource-info"><h4>gov.br/cvm</h4><p>Sandbox regulatório, inovação e mercado de capitais</p></div><span class="resource-tag" style="background:#10b98122;color:#10b981;border:1px solid #10b98133;">Obrigatório</span></div>
+    <div class="resource-card"><div class="resource-icon" style="background:#f59e0b22;">📚</div><div class="resource-info"><h4>QConcursos</h4><p>Filtre "Atualidades do Mercado Financeiro" + provas de 2022 em diante</p></div><span class="resource-tag" style="background:#f59e0b22;color:#f59e0b;border:1px solid #f59e0b33;">Prática</span></div>
+    <div class="resource-card"><div class="resource-icon" style="background:#ef444422;">📰</div><div class="resource-info"><h4>Valor Econômico / InfoMoney</h4><p>15 minutos por dia nas semanas antes da prova</p></div><span class="resource-tag" style="background:#ef444422;color:#ef4444;border:1px solid #ef444433;">Atualização</span></div>
+    <div class="resource-card"><div class="resource-icon" style="background:#10b98122;">▶️</div><div class="resource-info"><h4>Canal BC no YouTube</h4><p>Vídeos institucionais sobre Pix, Open Finance e Drex — conteúdo cobrable direto</p></div><span class="resource-tag" style="background:#00d4ff22;color:#00d4ff;border:1px solid #00d4ff33;">Vídeos</span></div>
+  </div>
+</div>
+
+</main>
+
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <span class="modal-emoji">🏆</span>
+    <h2>Bloco concluído!</h2>
+    <p id="modal-msg">Excelente! Continue para o próximo bloco ou revise com os flashcards.</p>
+    <button class="btn btn-primary" onclick="closeModal()">Continuar estudando</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── PARTICLES ──
+const cvs = document.getElementById('particles');
+const ctx = cvs.getContext('2d');
+let pts = [];
+function resize(){ cvs.width=innerWidth; cvs.height=innerHeight; }
+resize(); window.addEventListener('resize',resize);
+for(let i=0;i<60;i++) pts.push({x:Math.random()*innerWidth,y:Math.random()*innerHeight,r:Math.random()*1.5+.5,vx:(Math.random()-.5)*.3,vy:(Math.random()-.5)*.3,a:Math.random()*.5+.1});
+function animPts(){
+  ctx.clearRect(0,0,cvs.width,cvs.height);
+  pts.forEach(p=>{
+    p.x+=p.vx; p.y+=p.vy;
+    if(p.x<0)p.x=cvs.width; if(p.x>cvs.width)p.x=0;
+    if(p.y<0)p.y=cvs.height; if(p.y>cvs.height)p.y=0;
+    ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(0,212,255,${p.a})`; ctx.fill();
+  });
+  requestAnimationFrame(animPts);
+}
+animPts();
+
+// ── TIMER ──
+let secs=0;
+setInterval(()=>{
+  secs++;
+  const h=Math.floor(secs/3600), m=Math.floor((secs%3600)/60), s=secs%60;
+  document.getElementById('th').textContent=String(h).padStart(2,'0');
+  document.getElementById('tm').textContent=String(m).padStart(2,'0');
+  document.getElementById('ts').textContent=String(s).padStart(2,'0');
+},1000);
+
+// ── DATA ──
+const blocks = {
+  b1: {
+    topics: [
+      { title:'Pix — Arquitetura e Modalidades', tag:'hot', body:`<p>O Pix não é simplesmente "TED rápido". Ele é operado diretamente pelo <strong>Banco Central</strong>, funciona <strong>24 horas por dia, 7 dias por semana</strong>, incluindo feriados, e é obrigatoriamente gratuito para pessoas físicas por determinação regulatória.</p><ul><li><strong>Pix Cobrança:</strong> substitui o boleto bancário com QR Code dinâmico</li><li><strong>Pix Saque e Pix Troco:</strong> permite sacar dinheiro em estabelecimentos comerciais</li><li><strong>Pix Automático:</strong> substitui o débito automático para cobranças recorrentes</li><li><strong>Chaves Pix:</strong> CPF/CNPJ, e-mail, telefone ou chave aleatória</li></ul><div class="key-point">💡 Impacto estratégico: O Pix forçou a gratuidade de transferências e quebrou barreiras de entrada para novas instituições, intensificando a concorrência bancária.</div>` },
+      { title:'Open Finance — As 4 Fases', tag:'hot', body:`<p>O Open Finance é a evolução do Open Banking. Sua lógica central: <strong>os dados financeiros pertencem ao cliente</strong>, não ao banco. Isso permite portabilidade de histórico e acesso a melhores condições de crédito.</p><ul><li><strong>Fase 1:</strong> Compartilhamento de dados das próprias instituições (produtos e serviços)</li><li><strong>Fase 2:</strong> Compartilhamento de dados cadastrais e transacionais dos clientes</li><li><strong>Fase 3:</strong> Iniciação de pagamentos e propostas de crédito via terceiros</li><li><strong>Fase 4:</strong> Expansão para seguros, previdência, câmbio e investimentos</li></ul><div class="key-point">💡 Diferença de nome: Open Banking focava em dados bancários. Open Finance abrange todo o ecossistema financeiro — seguros, investimentos, câmbio, previdência.</div>` },
+      { title:'Drex — Real Digital (CBDC)', tag:'med', body:`<p>O Drex é a moeda digital do Banco Central do Brasil (CBDC — Central Bank Digital Currency). Diferente das criptomoedas, é emitido e controlado pelo Estado.</p><ul><li>Operado em <strong>blockchain permissionada</strong> — acesso controlado, não público</li><li>Equivale ao Real físico: 1 Drex = R$ 1,00 garantido pelo BCB</li><li>Permite <strong>contratos inteligentes</strong> (smart contracts) em transações financeiras</li><li>Não é aberto ao público diretamente — passa por bancos e instituições autorizadas</li></ul><div class="key-point">💡 Diferença crucial para a prova: Drex ≠ criptomoeda. Criptomoeda é descentralizada, sem controle estatal, e volátil. O Drex é centralizado, garantido pelo BCB e estável.</div>` },
+      { title:'SPB — Sistema de Pagamentos Brasileiro', tag:'ok', body:`<p>O SPB é o conjunto de entidades, sistemas e procedimentos que processam as transferências de fundos no Brasil. Foi modernizado em 2002 e o Pix é sua evolução mais recente.</p><ul><li><strong>STR (Sistema de Transferência de Reservas):</strong> liquidação em tempo real, operado pelo BCB</li><li><strong>SITRAF:</strong> câmara de transferência de fundos (TED)</li><li><strong>SPI (Sistema de Pagamentos Instantâneos):</strong> infraestrutura que suporta o Pix</li></ul><div class="key-point">💡 Para a prova: o SPI é a infraestrutura tecnológica do Pix, assim como o STR é a infraestrutura do TED. O Banco Central opera ambos diretamente.</div>` },
+    ]
+  },
+  b2: {
+    topics: [
+      { title:'Fintechs — Conceito e Categorias', tag:'hot', body:`<p>Fintech (Financial Technology) é qualquer empresa que usa tecnologia para oferecer serviços financeiros de forma mais eficiente, acessível ou barata que os players tradicionais.</p><ul><li><strong>Fintechs de pagamento:</strong> processadoras, carteiras digitais (ex: PicPay)</li><li><strong>Fintechs de crédito:</strong> SCDs (Sociedades de Crédito Direto), plataformas P2P</li><li><strong>Fintechs de investimento:</strong> plataformas de corretagem digital</li><li><strong>Insurtechs:</strong> seguradoras digitais</li><li><strong>Regtechs:</strong> tecnologia para conformidade regulatória</li></ul><div class="key-point">💡 Erro clássico: Fintech ≠ banco digital. Banco digital é UMA categoria de fintech. Há fintechs que nunca serão bancos — como uma maquininha ou um app de câmbio.</div>` },
+      { title:'Instituições de Pagamento (IPs)', tag:'hot', body:`<p>As IPs são reguladas pelo Banco Central mas NÃO são bancos. Elas não captam depósitos nem concedem crédito da forma tradicional — mas podem realizar pagamentos e manter recursos de clientes.</p><ul><li><strong>Emissor de instrumento de pagamento pós-pago:</strong> emite cartão de crédito</li><li><strong>Emissor de moeda eletrônica:</strong> mantém conta de pagamento (ex: carteira digital)</li><li><strong>Credenciador:</strong> opera maquininhas de cartão</li><li><strong>Iniciador de pagamento:</strong> inicia Pix sem deter os recursos</li></ul><div class="key-point">💡 Conta de pagamento ≠ conta corrente. A conta de pagamento não tem incidência de IOF nas transferências e não oferece crédito. Os recursos ficam segregados.</div>` },
+      { title:'Banking as a Service (BaaS)', tag:'med', body:`<p>BaaS é o modelo em que uma instituição financeira licenciada disponibiliza sua infraestrutura regulatória para que outras empresas (não-financeiras) ofereçam produtos financeiros sob sua própria marca.</p><ul><li>Um varejista oferece crédito sem ser banco — usando a licença de um banco parceiro</li><li>Um app de mobilidade oferece cartão de crédito — infraestrutura de um emissor</li><li>Permite que marcas não-financeiras criem experiências financeiras integradas</li></ul><div class="key-point">💡 BaaS é a base técnica do Embedded Finance. Sem o BaaS (infraestrutura), não existe o Embedded Finance (experiência do usuário).</div>` },
+      { title:'Big Techs no Mercado Financeiro', tag:'med', body:`<p>Empresas como Google, Amazon, Apple e Meta estão entrando no mercado financeiro global. No Brasil, o Banco Central e o Cade (antitruste) monitoram esse movimento de perto.</p><ul><li><strong>Risco de concentração:</strong> Big Techs já têm bilhões de usuários e dados comportamentais valiosos</li><li><strong>Google Pay, Apple Pay:</strong> carteiras digitais integradas ao ecossistema</li><li><strong>Mercado Pago:</strong> maior fintech da América Latina, ligada ao Mercado Livre</li><li>O BCB exigiu interoperabilidade do WhatsApp Pay por questão competitiva</li></ul><div class="key-point">💡 Para prova: o caso do WhatsApp Pay é emblemático. O BCB suspendeu o serviço em 2020 e exigiu aprovação formal para garantir interoperabilidade — não foi por "falta de segurança".</div>` },
+    ]
+  },
+  b3: {
+    topics: [
+      { title:'Criptomoedas e Regulação Brasileira', tag:'hot', body:`<p>A <strong>Lei 14.478/2022</strong> é o marco legal das criptomoedas no Brasil. Ela não proíbe nem fomenta — cria um ambiente regulatório para as prestadoras de serviços de ativos virtuais (PSAVs).</p><ul><li><strong>Blockchain:</strong> registro distribuído e imutável de transações</li><li><strong>Bitcoin:</strong> reserva de valor digital, oferta limitada a 21 milhões</li><li><strong>Altcoins:</strong> todas as criptomoedas que não são Bitcoin</li><li><strong>Supervisão:</strong> Banco Central supervisiona as exchanges no Brasil</li><li><strong>Tributação:</strong> Receita Federal — ganhos acima de R$35k/mês são tributados</li></ul><div class="key-point">💡 Ponto de prova: a Lei 14.478/2022 define "ativo virtual" e exige que as PSAVs tenham autorização para operar no Brasil, com regras de prevenção à lavagem de dinheiro.</div>` },
+      { title:'Tokenização de Ativos', tag:'med', body:`<p>Tokenizar um ativo é representá-lo digitalmente em blockchain — criando um "token" que pode ser negociado, fracionado e transferido com muito mais agilidade que o ativo original.</p><ul><li><strong>Imóvel tokenizado:</strong> um imóvel de R$1M pode ser dividido em 1.000 tokens de R$1.000</li><li><strong>Recebível tokenizado:</strong> uma nota fiscal pode ser tokenizada para antecipação</li><li><strong>Drex e tokenização:</strong> o Real Digital viabiliza liquidação instantânea de ativos tokenizados</li><li>CVM e Banco Central estão desenvolvendo regulação conjunta para o tema</li></ul><div class="key-point">💡 A tokenização não cria novos ativos — ela cria novas formas de negociar ativos existentes, com mais liquidez, menor custo e maior fracionamento.</div>` },
+      { title:'Stablecoins e Riscos', tag:'med', body:`<p>Stablecoins são criptomoedas atreladas a um ativo estável (geralmente o dólar), criadas para eliminar a volatilidade típica das criptomoedas.</p><ul><li><strong>USDT (Tether):</strong> maior stablecoin, lastreada em dólar</li><li><strong>USDC:</strong> stablecoin regulada, com auditoria de reservas</li><li><strong>Caso TerraLUNA (2022):</strong> colapso de uma stablecoin algorítmica que destruiu US$40 bilhões</li><li>Reguladores globais passaram a exigir lastro real e auditoria após o caso Terra</li></ul><div class="key-point">💡 Para a prova: stablecoin algorítmica ≠ stablecoin lastreada. A algorítmica usa código para manter a paridade — e pode falhar catastroficamente, como demonstrou o TerraLUNA.</div>` },
+    ]
+  },
+  b4: {
+    topics: [
+      { title:'LGPD no Sistema Financeiro', tag:'hot', body:`<p>A Lei Geral de Proteção de Dados (Lei 13.709/2018) impacta diretamente bancos e fintechs, que trabalham com dados sensíveis em larga escala.</p><ul><li><strong>ANPD:</strong> Autoridade Nacional de Proteção de Dados — fiscaliza o cumprimento</li><li><strong>Consentimento:</strong> o titular deve consentir com o tratamento dos seus dados</li><li><strong>Bases legais:</strong> além do consentimento, há outras bases (execução de contrato, legítimo interesse)</li><li><strong>Direitos do titular:</strong> acesso, correção, exclusão, portabilidade dos dados</li><li>Open Finance e LGPD se complementam — o cliente autoriza o compartilhamento</li></ul><div class="key-point">💡 Conexão importante: Open Finance SEM LGPD seria impossível — é a LGPD que garante que o compartilhamento de dados seja feito com consentimento e finalidade definida.</div>` },
+      { title:'Cadastro Positivo', tag:'hot', body:`<p>O Cadastro Positivo registra o histórico de pagamentos em dia de pessoas físicas e jurídicas. Desde 2019, a adesão é automática (opt-out) — ou seja, todos estão incluídos automaticamente.</p><ul><li>Gerenciado pelos bureaus de crédito: Serasa, SPC, Boa Vista, Quod</li><li>Permite que bons pagadores tenham <strong>acesso a crédito mais barato</strong></li><li>Beneficia especialmente os <strong>desbancarizados</strong> sem histórico em banco</li><li>O score de crédito melhora com dados positivos, não apenas negativos</li></ul><div class="key-point">💡 Antes do Cadastro Positivo, o sistema de crédito brasileiro era apenas "negativo" — você só aparecia se tivesse dívida. Isso prejudicava quem sempre pagou em dia mas não tinha histórico bancário.</div>` },
+      { title:'Inteligência Artificial nos Bancos', tag:'hot', body:`<p>A IA está transformando todas as funções bancárias — do relacionamento com clientes à análise de risco sistêmico.</p><ul><li><strong>Análise de crédito:</strong> modelos de machine learning analisam centenas de variáveis simultaneamente</li><li><strong>Detecção de fraudes:</strong> IA identifica padrões anômalos em tempo real</li><li><strong>Chatbots e assistentes:</strong> atendimento 24/7, resolução de demandas simples</li><li><strong>Personalização:</strong> ofertas de produtos baseadas em comportamento do cliente</li><li><strong>Riscos:</strong> viés algorítmico pode discriminar grupos vulneráveis no crédito</li></ul><div class="key-point">💡 Ponto de atenção regulatória: o Banco Central e o CMN estão desenvolvendo diretrizes para uso ético de IA, especialmente para evitar discriminação algorítmica em concessões de crédito.</div>` },
+      { title:'Segurança Cibernética — Resolução BCB 4.893', tag:'hot', body:`<p>A Resolução BCB 4.893/2021 obriga todas as instituições financeiras a terem uma política de segurança cibernética estruturada.</p><ul><li><strong>Exigências:</strong> política formal, plano de resposta a incidentes, testes regulares</li><li><strong>Engenharia social:</strong> manipulação psicológica para obter dados (phishing, vishing)</li><li><strong>SIM Swap:</strong> clonagem de chip celular para interceptar SMS de autenticação</li><li><strong>Responsabilidade do banco:</strong> o banco responde por fraudes se não adotar medidas adequadas de segurança</li></ul><div class="key-point">💡 Para provas: o banco tem responsabilidade objetiva por falhas de segurança em seus sistemas. Se o cliente foi vítima de phishing sofisticado sem negligência própria, o banco pode responder.</div>` },
+    ]
+  },
+  b5: {
+    topics: [
+      { title:'Agenda BC# — Os 4 Pilares', tag:'hot', body:`<p>A Agenda BC# é o programa estratégico do Banco Central do Brasil, lançado em 2019. Ela explica POR QUE o Pix, o Open Finance e o Drex existem. Quem entende a Agenda BC# conecta todos os temas.</p><ul><li><strong>Inclusão:</strong> ampliar o acesso ao sistema financeiro para desbancarizados</li><li><strong>Competitividade:</strong> reduzir concentração bancária, facilitar entrada de novos players</li><li><strong>Transparência:</strong> mais informação ao consumidor sobre tarifas, produtos e riscos</li><li><strong>Educação financeira:</strong> capacitar a população para decisões financeiras conscientes</li></ul><div class="key-point">💡 Mnemônico: ICTE — Inclusão, Competitividade, Transparência, Educação. O Pix serve à Competitividade e Inclusão. O Open Finance serve à Competitividade e Transparência.</div>` },
+      { title:'ESG no Mercado Financeiro', tag:'med', body:`<p>ESG (Environmental, Social, Governance) deixou de ser pauta de sustentabilidade para se tornar critério financeiro. O risco climático agora é tratado como risco de crédito.</p><ul><li><strong>Resolução CMN 4.945/2021:</strong> obriga bancos a ter política de responsabilidade socioambiental</li><li><strong>Green Bonds:</strong> títulos de dívida emitidos para financiar projetos sustentáveis</li><li><strong>Crédito verde:</strong> linhas com taxas menores para projetos de baixo impacto ambiental</li><li><strong>Mercado de carbono:</strong> Brasil avança em regulação para créditos de carbono</li><li><strong>Análise de risco climático:</strong> carteiras bancárias devem mapear exposição a ativos "stranded"</li></ul><div class="key-point">💡 Conexão para a prova: um banco que financeia empresas com alto risco climático pode ter sua carteira desvalorizada por regulação ambiental futura. Por isso ESG é risco financeiro, não só ética.</div>` },
+      { title:'Inclusão Financeira e Desbancarização', tag:'med', body:`<p>O Brasil ainda tem milhões de pessoas sem acesso pleno ao sistema financeiro. A inclusão financeira é um objetivo explícito do Banco Central e da Agenda BC#.</p><ul><li><strong>Desbancarizados:</strong> pessoas sem conta em banco ou com acesso muito limitado</li><li><strong>Pix como ferramenta de inclusão:</strong> gratuito, acessível por celular básico, sem necessidade de conta corrente</li><li><strong>Correspondentes bancários:</strong> lotéricas, farmácias e mercados que oferecem serviços bancários básicos</li><li><strong>Conta de pagamento:</strong> mais acessível que conta corrente, sem exigências de renda mínima</li></ul><div class="key-point">💡 Dado para contexto: o Pix acelerou a inclusão financeira mais em 1 ano do que qualquer programa dos 20 anos anteriores — é argumento recorrente em questões que pedem o impacto do Pix.</div>` },
+      { title:'Sandbox Regulatório', tag:'ok', body:`<p>O sandbox regulatório é um ambiente controlado onde empresas inovadoras podem testar produtos financeiros sem estar sujeitas a toda a regulação vigente — por um período limitado.</p><ul><li>Criado pelo Banco Central (Resolução BCB 29/2020) e pela CVM</li><li>Permite testar modelos de negócio sem licença completa por até 2 anos</li><li>A empresa deve ter: modelo inovador, controles de risco e plano de saída</li><li>Após o sandbox, a empresa regulariza ou encerra a atividade</li></ul><div class="key-point">💡 O sandbox resolve um dilema clássico de regulação: exigir licença completa antes do teste desincentiva a inovação; não ter nenhuma regra gera risco ao consumidor. O sandbox é o meio-termo.</div>` },
+    ]
+  }
+};
+
+const quizData = [
+  { q:'Qual órgão opera diretamente a infraestrutura do Pix no Brasil?', opts:['Febraban','Banco Central do Brasil','Conselho Monetário Nacional','B3'], correct:1, exp:'O Pix é operado diretamente pelo Banco Central, por meio do SPI (Sistema de Pagamentos Instantâneos). Isso é diferente do TED, que passa por câmaras privadas.' },
+  { q:'O Open Finance avançou do conceito de Open Banking ao incluir quais novos segmentos?', opts:['Apenas crédito e câmbio','Somente investimentos','Seguros, previdência, câmbio e investimentos','Apenas seguros e previdência'], correct:2, exp:'O Open Finance expandiu o escopo do Open Banking para incluir dados e transações de seguros, previdência complementar, câmbio e investimentos — não só bancários.' },
+  { q:'O que diferencia o Drex (Real Digital) de uma criptomoeda como o Bitcoin?', opts:['O Drex usa blockchain e o Bitcoin não','O Drex é emitido e controlado pelo Banco Central; o Bitcoin é descentralizado','O Drex é volátil e o Bitcoin estável','Não há diferença prática entre os dois'], correct:1, exp:'O Drex é uma CBDC — moeda digital de banco central, com emissão controlada e garantia estatal, equivalente ao Real físico. O Bitcoin é descentralizado, sem controle estatal e volátil.' },
+  { q:'Qual é a principal diferença entre uma Fintech e um Banco Digital?', opts:['Não há diferença conceitual','Todo banco digital é uma fintech, mas nem toda fintech é banco digital','Toda fintech é obrigatoriamente um banco digital','Bancos digitais não são regulados pelo Banco Central'], correct:1, exp:'Banco digital é apenas uma categoria dentro do universo de fintechs. Uma fintech de maquininha, um app de câmbio ou uma seguradora digital são fintechs — mas não são bancos digitais.' },
+  { q:'Qual lei estabeleceu o marco regulatório das criptomoedas no Brasil?', opts:['Lei 13.709/2018','Lei 9.613/1998','Lei 14.478/2022','Lei 12.865/2013'], correct:2, exp:'A Lei 14.478/2022 é o marco legal dos criptoativos no Brasil. Ela define "ativo virtual", cria a figura das PSAVs (prestadoras de serviços de ativos virtuais) e estabelece regras de prevenção à lavagem.' },
+  { q:'Quais são os 4 pilares da Agenda BC# do Banco Central?', opts:['Pix, Open Finance, Drex, Sandbox','Inclusão, Competitividade, Transparência, Educação financeira','Regulação, Supervisão, Fiscalização, Controle','Segurança, Inovação, Sustentabilidade, Crédito'], correct:1, exp:'A Agenda BC# tem 4 pilares: Inclusão (ampliar acesso), Competitividade (reduzir concentração), Transparência (mais informação ao consumidor) e Educação financeira. ICTE.' },
+  { q:'O que é o Cadastro Positivo e qual sua principal mudança em 2019?', opts:['Banco de dados de devedores; passou a ser opt-in','Banco de dados de bons pagadores; passou a ser opt-out (adesão automática)','Lista de empresas sancionadas; passou a ser pública','Registro de fintechs; passou a ser obrigatório'], correct:1, exp:'O Cadastro Positivo registra histórico de pagamentos em dia. Em 2019, passou a ser opt-out — todos são incluídos automaticamente, a menos que solicitem exclusão.' },
+  { q:'Qual Resolução obriga instituições financeiras a terem política estruturada de segurança cibernética?', opts:['CMN 4.945/2021','BCB 4.893/2021','Lei 13.709/2018','CVM 175/2022'], correct:1, exp:'A Resolução BCB 4.893/2021 estabelece requisitos para a política de segurança cibernética e para a contratação de serviços de processamento e armazenamento de dados de instituições financeiras.' },
+  { q:'O que é Banking as a Service (BaaS)?', opts:['Um serviço de atendimento bancário 24h','Modelo em que uma instituição licenciada disponibiliza infraestrutura para não-bancos oferecerem produtos financeiros','Plataforma de open banking para compartilhar dados','Sistema de pagamentos do Banco Central'], correct:1, exp:'BaaS permite que empresas não-financeiras (varejistas, apps) ofereçam serviços bancários usando a licença e infraestrutura de uma instituição regulada, sem precisar elas mesmas ser bancos.' },
+  { q:'Qual das afirmações sobre o ESG no mercado financeiro está CORRETA?', opts:['ESG é apenas uma iniciativa voluntária sem impacto regulatório','A Resolução CMN 4.945/2021 obriga bancos a ter política de responsabilidade socioambiental','ESG é tratado pelo Banco Central como tema de marketing institucional','Green bonds são isentos de regulação da CVM'], correct:1, exp:'A Resolução CMN 4.945/2021 tornou a política de responsabilidade socioambiental obrigatória para instituições financeiras. ESG é risco financeiro — não apenas pauta ética ou de marketing.' },
+];
+
+const flashcards = [
+  { q:'O que é o SPI e qual sua relação com o Pix?', a:'O <strong>SPI (Sistema de Pagamentos Instantâneos)</strong> é a infraestrutura tecnológica operada pelo Banco Central que suporta todas as transações Pix. É o "motor" por trás do Pix.' },
+  { q:'Qual é a principal diferença entre Open Banking e Open Finance?', a:'<strong>Open Banking</strong> abrange dados bancários. <strong>Open Finance</strong> expande para seguros, previdência, câmbio e investimentos — é o Open Banking evoluído.' },
+  { q:'O que é uma CBDC?', a:'<strong>Central Bank Digital Currency</strong> — moeda digital emitida e controlada por um banco central. O Drex é a CBDC do Brasil. Diferente de criptomoeda: é centralizada e estável.' },
+  { q:'Cite as 4 fases do Open Finance.', a:'<strong>Fase 1:</strong> dados das instituições. <strong>Fase 2:</strong> dados dos clientes. <strong>Fase 3:</strong> iniciação de pagamentos e crédito. <strong>Fase 4:</strong> expansão para seguros e investimentos.' },
+  { q:'O que é uma Instituição de Pagamento (IP)?', a:'Empresa regulada pelo Banco Central que oferece serviços de pagamento <strong>sem ser banco</strong>. Não capta depósitos nem concede crédito da forma tradicional. Ex: emissores de cartão, credenciadoras.' },
+  { q:'Quais são os 4 pilares da Agenda BC#?', a:'<strong>I</strong>nclusão · <strong>C</strong>ompetitividade · <strong>T</strong>ransparência · <strong>E</strong>ducação financeira. Mnemônico: <strong>ICTE</strong>.' },
+  { q:'O que é o Cadastro Positivo e como funciona?', a:'Banco de dados de bons pagadores. Desde 2019 é <strong>opt-out</strong> — todos são incluídos automaticamente. Permite melhores condições de crédito para quem paga em dia.' },
+  { q:'Quais são as 3 fases da lavagem de dinheiro?', a:'<strong>1. Colocação:</strong> inserir o dinheiro sujo no sistema. <strong>2. Ocultação:</strong> disfarçar a origem. <strong>3. Integração:</strong> reinserir como dinheiro "limpo" na economia.' },
+  { q:'O que é Banking as a Service (BaaS)?', a:'Modelo em que uma instituição <strong>licenciada disponibiliza sua infraestrutura</strong> para não-bancos oferecerem produtos financeiros. Base técnica do Embedded Finance.' },
+  { q:'O que é uma stablecoin e qual o risco do modelo algorítmico?', a:'Criptomoeda atrelada a ativo estável (ex: dólar). O modelo <strong>algorítmico</strong> usa código para manter paridade — pode colapsar, como o TerraLUNA em 2022 (US$ 40 bilhões destruídos).' },
+  { q:'O que regula a Resolução BCB 4.893/2021?', a:'Obriga instituições financeiras a terem <strong>política formal de segurança cibernética</strong>, plano de resposta a incidentes e testes periódicos de vulnerabilidade.' },
+  { q:'O que é o Sandbox Regulatório do Banco Central?', a:'Ambiente controlado para testar <strong>inovações financeiras sem licença completa</strong> por até 2 anos (Res. BCB 29/2020). Permite inovar com regras reduzidas sob supervisão.' },
+];
+
+// ── RENDER TOPICS ──
+function renderTopics(){
+  Object.keys(blocks).forEach(bk => {
+    const el = document.getElementById('topics-'+bk);
+    if(!el) return;
+    blocks[bk].topics.forEach((t,i) => {
+      const tagMap = {hot:'tag-hot',med:'tag-med',ok:'tag-ok'};
+      const tagLabel = {hot:'🔥 Alta frequência',med:'⚡ Frequência média',ok:'✓ Importante'};
+      el.innerHTML += `<div class="topic-card" id="tc-${bk}-${i}" onclick="toggleTopic('${bk}',${i})">
+        <div class="topic-title"><h3>${t.title}</h3><span class="topic-tag ${tagMap[t.tag]}">${tagLabel[t.tag]}</span></div>
+        <div class="topic-body">${t.body}</div>
+      </div>`;
+    });
+  });
+}
+
+function toggleTopic(bk, i){
+  const el = document.getElementById('tc-'+bk+'-'+i);
+  el.classList.toggle('expanded');
+}
+
+// ── STATE ──
+let done = {b1:false,b2:false,b3:false,b4:false,b5:false};
+let quizHits = 0, cardsSeens = new Set();
+let currentQ = 0, answered = false, qScore = 0;
+let fcIdx = 0, fcFlipped = false;
+
+function updateStats(){
+  const d = Object.values(done).filter(Boolean).length;
+  document.getElementById('s-blocos').textContent = d+'/5';
+  document.getElementById('s-quiz').textContent = quizHits;
+  document.getElementById('s-cards').textContent = cardsSeens.size;
+  const pct = Math.round((d/5)*70 + (quizHits/10)*20 + (cardsSeens.size/flashcards.length)*10);
+  document.getElementById('pbar').style.width = pct+'%';
+  document.getElementById('pct').textContent = pct+'%';
+}
+
+function markDone(b){
+  if(done[b]){ showToast('Bloco já concluído!','blue'); return; }
+  done[b] = true;
+  document.getElementById('nb-'+b).classList.add('done');
+  document.getElementById('modal').classList.add('show');
+  updateStats();
+}
+
+function closeModal(){ document.getElementById('modal').classList.remove('show'); }
+
+// ── VIEWS ──
+function showView(v){
+  document.querySelectorAll('.view').forEach(el=>el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('active'));
+  document.getElementById('view-'+v).classList.add('active');
+  const nb = document.getElementById('nb-'+v);
+  if(nb) nb.classList.add('active');
+  if(v==='quiz') renderQuiz();
+  if(v==='flash') renderFlashcard();
+  if(v==='focus') renderBars();
+}
+
+// ── QUIZ ──
+function renderQuiz(){
+  const c = document.getElementById('quiz-container');
+  const q = quizData[currentQ];
+  c.innerHTML = `
+    <div class="quiz-wrap">
+      <div class="quiz-q"><span class="q-num">Questão ${currentQ+1} de ${quizData.length}</span>${q.q}</div>
+      <div class="quiz-opts">${q.opts.map((o,i)=>`<button class="quiz-opt" onclick="answerQuiz(${i})">${o}</button>`).join('')}</div>
+      <div class="quiz-feedback" id="qfb"></div>
+    </div>
+    <div class="quiz-nav">
+      <span class="quiz-score">✓ ${qScore} acerto${qScore!==1?'s':''}</span>
+      <button class="btn btn-primary" id="qnext" onclick="nextQ()" disabled>Próxima →</button>
+    </div>`;
+  answered = false;
+}
+
+function answerQuiz(i){
+  if(answered) return;
+  answered = true;
+  const q = quizData[currentQ];
+  const opts = document.querySelectorAll('.quiz-opt');
+  opts.forEach(o=>o.disabled=true);
+  opts[i].classList.add(i===q.correct?'correct':'wrong');
+  if(i!==q.correct) opts[q.correct].classList.add('correct');
+  const fb = document.getElementById('qfb');
+  if(i===q.correct){ qScore++; quizHits++; fb.className='quiz-feedback ok show'; fb.textContent='✓ Correto! '+q.exp; }
+  else { fb.className='quiz-feedback nok show'; fb.textContent='✗ Incorreto. '+q.exp; }
+  document.getElementById('qnext').disabled=false;
+  updateStats();
+}
+
+function nextQ(){
+  currentQ++;
+  if(currentQ>=quizData.length){
+    const c=document.getElementById('quiz-container');
+    const pct=Math.round((qScore/quizData.length)*100);
+    const emoji = pct>=80?'🏆':pct>=60?'📚':'💪';
+    c.innerHTML=`<div style="text-align:center;padding:40px 20px;">
+      <div style="font-size:4rem;margin-bottom:16px;">${emoji}</div>
+      <div class="modal-score">${qScore}/${quizData.length}</div>
+      <div class="modal-score-label">${pct}% de aproveitamento</div>
+      <p style="color:var(--muted);font-size:.9rem;margin-bottom:24px;line-height:1.7;">${pct>=80?'Excelente! Você domina o conteúdo de Atualidades do Mercado Financeiro.':pct>=60?'Bom resultado! Revise os temas que errou e refaça o quiz.':'Continue estudando! Volte aos blocos e refaça o quiz.'}</p>
+      <button class="btn btn-primary" onclick="currentQ=0;qScore=0;renderQuiz()">🔄 Refazer quiz</button>
+    </div>`;
+  } else renderQuiz();
+}
+
+// ── FLASHCARDS ──
+function renderFlashcard(){
+  const fc = flashcards[fcIdx];
+  document.getElementById('fc-q').textContent = fc.q;
+  document.getElementById('fc-a').innerHTML = fc.a;
+  document.getElementById('fc-counter').textContent = `${fcIdx+1} / ${flashcards.length}`;
+  document.getElementById('flashcard').classList.remove('flipped');
+  fcFlipped=false;
+  cardsSeens.add(fcIdx); updateStats();
+}
+
+function flipCard(){
+  fcFlipped=!fcFlipped;
+  document.getElementById('flashcard').classList.toggle('flipped',fcFlipped);
+}
+
+function nextCard(){ fcIdx=(fcIdx+1)%flashcards.length; renderFlashcard(); }
+function prevCard(){ fcIdx=(fcIdx-1+flashcards.length)%flashcards.length; renderFlashcard(); }
+
+// ── BARS ──
+function renderBars(){
+  const items = [
+    {label:'Pix e infraestrutura',pct:22,color:'#00d4ff'},
+    {label:'Open Finance',pct:18,color:'#7c3aed'},
+    {label:'Fintechs e IPs',pct:15,color:'#10b981'},
+    {label:'LGPD e Segurança',pct:14,color:'#f59e0b'},
+    {label:'Agenda BC#',pct:12,color:'#06b6d4'},
+    {label:'Criptoativos',pct:10,color:'#a78bfa'},
+    {label:'ESG',pct:9,color:'#34d399'},
+  ];
+  document.getElementById('bar-data').innerHTML = items.map(it=>`
+    <div style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;font-size:.78rem;color:var(--muted);margin-bottom:4px;"><span>${it.label}</span><span style="color:${it.color};font-weight:700;">${it.pct}%</span></div>
+      <div style="background:#1e3a5f33;border-radius:50px;height:6px;overflow:hidden;"><div style="height:100%;width:${it.pct*4}%;background:${it.color};border-radius:50px;transition:width .8s ease;"></div></div>
+    </div>`).join('');
+}
+
+// ── TOAST ──
+function showToast(msg, type='blue'){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = `toast ${type} show`;
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+
+// ── INIT ──
+renderTopics();
+updateStats();
+</script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+// ─────────────────────────────────────────────
+// MATÉRIA — ex: "Atualidades do Mercado Financeiro"
+// ─────────────────────────────────────────────
+model Materia {
+  id        String   @id @default(cuid())
+  nome      String
+  slug      String   @unique
+  descricao String?  @db.Text
+  icone     String?
+  cor       String?
+  ativa     Boolean  @default(true)
+  ordem     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  blocos Bloco[]
+
+  @@map("materias")
+}
+
+// ─────────────────────────────────────────────
+// BLOCO — agrupa tópicos dentro de uma matéria
+// ─────────────────────────────────────────────
+model Bloco {
+  id        String   @id @default(cuid())
+  nome      String
+  slug      String
+  descricao String?  @db.Text
+  ordem     Int      @default(0)
+  materiaId String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  materia Materia  @relation(fields: [materiaId], references: [id], onDelete: Cascade)
+  topicos Topico[]
+
+  @@unique([materiaId, slug])
+  @@map("blocos")
+}
+
+// ─────────────────────────────────────────────
+// TÓPICO — conteúdo de estudo
+// ─────────────────────────────────────────────
+model Topico {
+  id        String   @id @default(cuid())
+  titulo    String
+  slug      String
+  conteudo  String   @db.LongText
+  resumo    String?  @db.Text
+  ordem     Int      @default(0)
+  blocoId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bloco      Bloco       @relation(fields: [blocoId], references: [id], onDelete: Cascade)
+  quizzes    Quiz[]
+  flashcards Flashcard[]
+
+  @@unique([blocoId, slug])
+  @@map("topicos")
+}
+
+// ─────────────────────────────────────────────
+// QUIZ — pergunta de múltipla escolha
+// ─────────────────────────────────────────────
+model Quiz {
+  id         String   @id @default(cuid())
+  pergunta   String   @db.Text
+  explicacao String?  @db.Text
+  ordem      Int      @default(0)
+  topicoId   String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  topico Topico      @relation(fields: [topicoId], references: [id], onDelete: Cascade)
+  opcoes OpcaoQuiz[]
+
+  @@map("quizzes")
+}
+
+// ─────────────────────────────────────────────
+// OPÇÃO DE QUIZ
+// ─────────────────────────────────────────────
+model OpcaoQuiz {
+  id      String  @id @default(cuid())
+  texto   String  @db.Text
+  correta Boolean @default(false)
+  ordem   Int     @default(0)
+  quizId  String
+
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@map("opcoes_quiz")
+}
+
+// ─────────────────────────────────────────────
+// FLASHCARD — frente e verso para revisão
+// ─────────────────────────────────────────────
+model Flashcard {
+  id        String   @id @default(cuid())
+  frente    String   @db.Text
+  verso     String   @db.LongText
+  dica      String?  @db.Text
+  ordem     Int      @default(0)
+  topicoId  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  topico Topico @relation(fields: [topicoId], references: [id], onDelete: Cascade)
+
+  @@map("flashcards")
+}
