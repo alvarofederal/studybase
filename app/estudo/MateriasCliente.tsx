@@ -41,7 +41,7 @@ export default function MateriasCliente({ materias, statusInicial }: Props) {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
       {materias.map((m) => {
         const st = status[m.id];
         const isPendente  = st === "PENDENTE";
@@ -56,8 +56,8 @@ export default function MateriasCliente({ materias, statusInicial }: Props) {
             {/* Barra topo — cinza para não liberadas */}
             <div className={`h-1 ${isPendente ? "bg-amber-500/60" : isRejeitada ? "bg-red-500/40" : "bg-gray-700"}`} />
 
-            <div className="flex-1 p-6">
-              <div className="flex items-start gap-4 mb-5">
+            <div className="flex-1 p-4 sm:p-6">
+              <div className="flex items-start gap-3 mb-4">
                 <div className="w-11 h-11 rounded-xl bg-gray-800 border border-gray-700 flex items-center justify-center text-2xl shrink-0 opacity-60">
                   {m.icone ?? "📖"}
                 </div>
@@ -101,7 +101,7 @@ export default function MateriasCliente({ materias, statusInicial }: Props) {
             </div>
 
             {/* Rodapé com botão de ação */}
-            <div className="border-t border-gray-800 px-6 py-3 bg-gray-900/40">
+            <div className="border-t border-gray-800 px-4 sm:px-6 py-3 bg-gray-900/40">
               {isPendente ? (
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />

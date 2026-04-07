@@ -48,32 +48,26 @@ export default async function PerfilPage() {
     <div className="min-h-screen bg-gray-950 text-white">
       {/* Navbar */}
       <nav className="sticky top-0 z-40 bg-gray-950/90 backdrop-blur border-b border-gray-800/60">
-        <div className="max-w-3xl mx-auto px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Link
-              href="/estudo"
-              className="text-gray-400 hover:text-white transition-colors text-sm flex items-center gap-1.5"
-            >
-              ← Minhas matérias
-            </Link>
-            <span className="text-gray-700">|</span>
-            <span className="text-sm font-black bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
-              StudyBase
-            </span>
-          </div>
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+          <Link
+            href="/estudo"
+            className="text-gray-400 hover:text-white active:text-white transition-colors text-sm flex items-center gap-1.5"
+          >
+            ← Minhas matérias
+          </Link>
           <UserMenuWidget nome={user.nome} perfilHref="/estudo/perfil" />
         </div>
       </nav>
 
-      <main className="max-w-3xl mx-auto px-6 py-10 space-y-8">
+      <main className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-10 space-y-7">
         {/* Cabeçalho */}
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-2xl font-bold text-emerald-400 shrink-0">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-xl sm:text-2xl font-bold text-emerald-400 shrink-0">
             {user.nome.charAt(0).toUpperCase()}
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white">{user.nome}</h1>
-            <p className="text-gray-400 text-sm mt-0.5">{user.email}</p>
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-white truncate">{user.nome}</h1>
+            <p className="text-gray-400 text-xs sm:text-sm mt-0.5 truncate">{user.email}</p>
             <p className="text-gray-600 text-xs mt-1">
               Membro desde{" "}
               {new Date(user.createdAt).toLocaleDateString("pt-BR", {
@@ -87,11 +81,11 @@ export default async function PerfilPage() {
 
         {/* Matérias com acesso */}
         <section>
-          <h2 className="text-sm font-bold text-gray-500 uppercase tracking-widest mb-4">
+          <h2 className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-3">
             Matérias liberadas ({materias.length})
           </h2>
           {materias.length === 0 ? (
-            <div className="p-6 bg-gray-900 border border-gray-800 rounded-xl text-center text-gray-500 text-sm">
+            <div className="p-5 bg-gray-900 border border-gray-800 rounded-xl text-center text-gray-500 text-sm">
               Nenhuma matéria liberada ainda.{" "}
               <Link href="/estudo" className="text-emerald-400 hover:underline">
                 Solicite acesso
@@ -99,20 +93,18 @@ export default async function PerfilPage() {
               .
             </div>
           ) : (
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               {materias.map(({ materia }) => (
                 <Link
                   key={materia.id}
                   href={`/estudo/${materia.slug}`}
-                  className="flex items-center gap-3 p-4 bg-gray-900 border border-gray-800 rounded-xl hover:border-emerald-500/40 hover:bg-gray-900/70 transition-all group"
+                  className="flex items-center gap-3 p-4 bg-gray-900 border border-gray-800 rounded-xl hover:border-emerald-500/40 active:border-emerald-500/40 hover:bg-gray-900/70 transition-all group"
                 >
                   <span className="text-xl shrink-0">{materia.icone ?? "📚"}</span>
-                  <span className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors truncate">
+                  <span className="text-sm font-medium text-gray-200 group-hover:text-white transition-colors truncate flex-1">
                     {materia.nome}
                   </span>
-                  <span className="ml-auto text-gray-600 group-hover:text-emerald-400 transition-colors text-sm shrink-0">
-                    →
-                  </span>
+                  <span className="text-gray-600 group-hover:text-emerald-400 transition-colors text-sm shrink-0">→</span>
                 </Link>
               ))}
             </div>

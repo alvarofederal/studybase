@@ -84,7 +84,7 @@ export default async function EstudoIndexPage({ searchParams }: PageProps) {
     <div className="min-h-screen bg-gray-950 text-white">
       {/* Navbar */}
       <nav className="sticky top-0 z-40 bg-gray-950/90 backdrop-blur border-b border-gray-800/60">
-        <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
+        <div className=" mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-base font-black bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
               StudyBase
@@ -100,7 +100,7 @@ export default async function EstudoIndexPage({ searchParams }: PageProps) {
       {/* Banner: acesso negado */}
       {acessoNegado && (
         <div className="bg-red-500/10 border-b border-red-500/20">
-          <div className="max-w-6xl mx-auto px-6 py-3 flex items-center gap-3">
+          <div className=" mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
             <span className="text-red-400 text-sm">🔒</span>
             <p className="text-red-400 text-sm">
               Você não tem acesso a essa matéria. Solicite abaixo ou aguarde aprovação.
@@ -109,48 +109,49 @@ export default async function EstudoIndexPage({ searchParams }: PageProps) {
         </div>
       )}
 
-      <main className="max-w-6xl mx-auto px-6 py-10">
-        {/* Perfil do usuário */}
-        <div className="flex items-center gap-4 mb-10 p-5 bg-gray-900 border border-gray-800 rounded-2xl">
-          <div className="w-12 h-12 rounded-xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-xl font-bold text-emerald-400 shrink-0">
+      <main className=" mx-auto px-4 sm:px-6 py-6 sm:py-10">
+        {/* Perfil do usuário — clicável, vai para /estudo/perfil */}
+        <Link
+          href="/estudo/perfil"
+          className="flex items-center gap-3 sm:gap-4 mb-8 p-4 sm:p-5 bg-gray-900 border border-gray-800 rounded-2xl hover:border-emerald-500/30 active:border-emerald-500/30 transition-colors group"
+        >
+          <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-lg sm:text-xl font-bold text-emerald-400 shrink-0 group-hover:border-emerald-500/50 transition-colors">
             {user.nome.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-white font-semibold truncate">{user.nome}</p>
-            <p className="text-gray-400 text-sm truncate">{user.email}</p>
+            <p className="text-white font-semibold truncate text-sm sm:text-base">{user.nome}</p>
+            <p className="text-gray-500 text-xs sm:text-sm truncate">{user.email}</p>
           </div>
-          <div className="hidden sm:flex flex-col items-end gap-1">
-            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border bg-gray-700/40 text-gray-400 border-gray-600/40">
-              Usuário
-            </span>
-            <span className="text-[11px] text-gray-600">
+          <div className="flex flex-col items-end gap-1 shrink-0">
+            <span className="text-xs text-gray-600 group-hover:text-emerald-500 transition-colors">Meu perfil →</span>
+            <span className="text-[10px] text-gray-700">
               Desde {new Date(user.createdAt).toLocaleDateString("pt-BR", { month: "short", year: "numeric" })}
             </span>
           </div>
-        </div>
+        </Link>
 
         {/* Matérias com acesso */}
         {materiasComAcesso.length > 0 ? (
-          <section className="mb-12">
-            <div className="mb-5">
-              <h2 className="text-xl font-bold text-white">Suas matérias</h2>
-              <p className="text-gray-500 text-sm mt-0.5">
+          <section className="mb-10">
+            <div className="mb-4">
+              <h2 className="text-lg sm:text-xl font-bold text-white">Suas matérias</h2>
+              <p className="text-gray-500 text-xs sm:text-sm mt-0.5">
                 {materiasComAcesso.length} matéria{materiasComAcesso.length !== 1 ? "s" : ""} liberada{materiasComAcesso.length !== 1 ? "s" : ""}
               </p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               {materiasComAcesso.map((m) => (
                 <MateriaCard key={m.id} materia={m} status="acesso" />
               ))}
             </div>
           </section>
         ) : (
-          <div className="text-center py-20 bg-gray-900 border border-gray-800 rounded-3xl mb-12">
-            <div className="text-5xl mb-4">🔒</div>
-            <h3 className="text-white font-semibold text-lg mb-2">
+          <div className="text-center py-14 sm:py-20 bg-gray-900 border border-gray-800 rounded-3xl mb-10">
+            <div className="text-4xl sm:text-5xl mb-3">🔒</div>
+            <h3 className="text-white font-semibold text-base sm:text-lg mb-2">
               Nenhuma matéria disponível ainda
             </h3>
-            <p className="text-gray-400 text-sm max-w-sm mx-auto leading-relaxed">
+            <p className="text-gray-400 text-sm max-w-xs mx-auto leading-relaxed px-4">
               Solicite acesso às matérias abaixo ou entre em contato com o administrador.
             </p>
           </div>
@@ -159,10 +160,10 @@ export default async function EstudoIndexPage({ searchParams }: PageProps) {
         {/* Matérias para solicitar */}
         {materiasParaSolicitar.length > 0 && (
           <section>
-            <div className="mb-5">
-              <h2 className="text-xl font-bold text-white">Solicitar acesso</h2>
-              <p className="text-gray-500 text-sm mt-0.5">
-                Clique em uma matéria para solicitar acesso — o administrador será notificado.
+            <div className="mb-4">
+              <h2 className="text-lg sm:text-xl font-bold text-white">Solicitar acesso</h2>
+              <p className="text-gray-500 text-xs sm:text-sm mt-0.5">
+                Toque em uma matéria para solicitar — o administrador será notificado.
               </p>
             </div>
             <MateriasCliente
@@ -225,12 +226,12 @@ function MateriaCard({
   return (
     <Link
       href={`/estudo/${materia.slug}`}
-      className="group flex flex-col bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden hover:border-emerald-500/40 transition-all hover:shadow-[0_0_40px_-12px_rgba(16,185,129,0.2)]"
+      className="group flex flex-col bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden hover:border-emerald-500/40 active:border-emerald-500/40 transition-all hover:shadow-[0_0_40px_-12px_rgba(16,185,129,0.2)]"
     >
       <div className="h-1 bg-gradient-to-r from-emerald-500 to-teal-500" />
-      <div className="flex-1 p-6">
-        <div className="flex items-start gap-4 mb-5">
-          <div className="w-11 h-11 rounded-xl bg-gray-800 border border-gray-700 flex items-center justify-center text-2xl shrink-0 group-hover:border-emerald-500/40 transition-colors">
+      <div className="flex-1 p-4 sm:p-6">
+        <div className="flex items-start gap-3 sm:gap-4 mb-4">
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gray-800 border border-gray-700 flex items-center justify-center text-xl sm:text-2xl shrink-0 group-hover:border-emerald-500/40 transition-colors">
             {materia.icone ?? "📖"}
           </div>
           <div className="flex-1 min-w-0">
@@ -244,23 +245,23 @@ function MateriaCard({
             )}
           </div>
         </div>
-        <div className="grid grid-cols-4 gap-2 mb-4">
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-2 mb-3">
           {[
             { n: materia.blocos.length, l: "Blocos",   icon: "📦" },
             { n: totalTopicos,          l: "Tópicos",  icon: "📝" },
             { n: totalQuizzes,          l: "Questões", icon: "🧠" },
             { n: totalFlashcards,       l: "Cards",    icon: "🃏" },
           ].map(({ n, l, icon }) => (
-            <div key={l} className="bg-gray-800/60 rounded-xl p-2 text-center">
+            <div key={l} className="bg-gray-800/60 rounded-xl p-1.5 sm:p-2 text-center">
               <div className="text-xs mb-0.5">{icon}</div>
               <div className="text-sm font-bold text-white">{n}</div>
-              <div className="text-[10px] text-gray-500">{l}</div>
+              <div className="text-[9px] sm:text-[10px] text-gray-500">{l}</div>
             </div>
           ))}
         </div>
-        <div className="flex flex-wrap gap-1.5">
+        <div className="flex flex-wrap gap-1">
           {materia.blocos.slice(0, 3).map((b) => (
-            <span key={b.id} className="text-[10px] bg-gray-800 text-gray-500 px-2 py-0.5 rounded-md truncate max-w-[130px]">
+            <span key={b.id} className="text-[10px] bg-gray-800 text-gray-500 px-2 py-0.5 rounded-md truncate max-w-[110px]">
               {b.nome}
             </span>
           ))}
@@ -269,7 +270,7 @@ function MateriaCard({
           )}
         </div>
       </div>
-      <div className="border-t border-gray-800 px-6 py-3 flex items-center justify-between bg-gray-900/40">
+      <div className="border-t border-gray-800 px-4 sm:px-6 py-3 flex items-center justify-between bg-gray-900/40">
         <div className="flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-xs text-gray-500">Acesso liberado</span>
