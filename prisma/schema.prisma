@@ -24,7 +24,9 @@ model Materia {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  blocos Bloco[]
+  blocos       Bloco[]
+  userMaterias UserMateria[]
+  solicitacoes SolicitacaoMateria[]
 
   @@map("materias")
 }
@@ -120,4 +122,101 @@ model Flashcard {
   topico Topico @relation(fields: [topicoId], references: [id], onDelete: Cascade)
 
   @@map("flashcards")
+}
+
+// ─────────────────────────────────────────────
+// USER — autenticação e controle de acesso
+// ─────────────────────────────────────────────
+model User {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String   @unique
+  senha     String   // bcrypt hash
+  role      Role     @default(USER)
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  refreshTokens        RefreshToken[]
+  passwordResetTokens  PasswordResetToken[]
+  materias             UserMateria[]
+  solicitacoes         SolicitacaoMateria[]
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  USER
+}
+
+// ─────────────────────────────────────────────
+// REFRESH TOKEN — sessões JWT (7 dias)
+// ─────────────────────────────────────────────
+model RefreshToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique // SHA-256 do token raw
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+// ─────────────────────────────────────────────
+// PASSWORD RESET TOKEN — recuperação de senha
+// ─────────────────────────────────────────────
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  usado     Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("password_reset_tokens")
+}
+
+// ─────────────────────────────────────────────
+// USER MATERIA — quais matérias o usuário pode acessar
+// ─────────────────────────────────────────────
+model UserMateria {
+  id        String   @id @default(cuid())
+  userId    String
+  materiaId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  materia Materia @relation(fields: [materiaId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, materiaId])
+  @@map("user_materias")
+}
+
+// ─────────────────────────────────────────────
+// SOLICITAÇÃO DE ACESSO — usuário pede permissão para uma matéria
+// ─────────────────────────────────────────────
+model SolicitacaoMateria {
+  id        String             @id @default(cuid())
+  userId    String
+  materiaId String
+  status    StatusSolicitacao  @default(PENDENTE)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  materia Materia @relation(fields: [materiaId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, materiaId])
+  @@map("solicitacoes_materias")
+}
+
+enum StatusSolicitacao {
+  PENDENTE
+  APROVADA
+  REJEITADA
 }

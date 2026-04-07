@@ -30,8 +30,14 @@ export default function AdminSidebar() {
     { href: "/admin/materias", label: "Matérias", icon: "📚", exact: false },
     { href: "/admin/quiz", label: "Quiz", icon: "🧠", exact: false },
     { href: "/admin/flashcards", label: "Flashcards", icon: "🃏", exact: false },
+    { href: "/admin/usuarios", label: "Usuários", icon: "👥", exact: false },
     { href: "/admin/context", label: "Contexto IA", icon: "🤖", exact: false },
   ];
+
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.href = "/login";
+  }
 
   return (
     <aside className="w-56 shrink-0 bg-gray-900 border-r border-gray-800 flex flex-col h-screen sticky top-0">
@@ -100,7 +106,7 @@ export default function AdminSidebar() {
       )}
 
       {/* Rodapé */}
-      <div className="px-4 py-3 border-t border-gray-800">
+      <div className="px-4 py-3 border-t border-gray-800 space-y-2">
         <Link
           href="/"
           target="_blank"
@@ -108,6 +114,12 @@ export default function AdminSidebar() {
         >
           <span>↗</span> Ver site
         </Link>
+        <button
+          onClick={handleLogout}
+          className="text-xs text-gray-600 hover:text-red-400 flex items-center gap-1.5 transition w-full text-left"
+        >
+          <span>→</span> Sair
+        </button>
       </div>
     </aside>
   );
