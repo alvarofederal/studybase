@@ -11,15 +11,25 @@ type Materia = {
   icone: string | null;
 };
 
+type UserInfo = { nome: string; id: string };
+
 export default function AdminSidebar() {
   const pathname = usePathname();
   const [materias, setMaterias] = useState<Materia[]>([]);
   const [pendentes, setPendentes] = useState(0);
+  const [adminUser, setAdminUser] = useState<UserInfo | null>(null);
 
   useEffect(() => {
     fetch("/api/materias")
       .then((r) => r.json())
       .then((d) => setMaterias(Array.isArray(d) ? d : []))
+      .catch(() => {});
+
+    fetch("/api/auth/me")
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.user) setAdminUser({ nome: d.user.nome, id: d.user.id });
+      })
       .catch(() => {});
   }, []);
 
@@ -125,20 +135,30 @@ export default function AdminSidebar() {
         </div>
       )}
 
-      {/* Rodapé */}
-      <div className="px-4 py-3 border-t border-gray-800 space-y-2">
-        <Link
-          href="/"
-          target="_blank"
-          className="text-xs text-gray-600 hover:text-gray-400 flex items-center gap-1.5"
-        >
-          <span>↗</span> Ver site
-        </Link>
+      {/* Rodapé — usuário logado */}
+      <div className="px-3 py-3 border-t border-gray-800 space-y-1">
+        {adminUser && (
+          <Link
+            href={`/admin/usuarios/${adminUser.id}`}
+            className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-gray-800 transition-colors group"
+            title="Meu perfil"
+          >
+            <div className="w-7 h-7 rounded-full bg-emerald-600/30 border border-emerald-500/40 flex items-center justify-center text-xs font-bold text-emerald-400 group-hover:border-emerald-400/60 transition-colors shrink-0">
+              {adminUser.nome.charAt(0).toUpperCase()}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-gray-300 group-hover:text-white transition-colors truncate">
+                {adminUser.nome.split(" ")[0]}
+              </p>
+              <p className="text-[10px] text-gray-600">Meu perfil</p>
+            </div>
+          </Link>
+        )}
         <button
           onClick={handleLogout}
-          className="text-xs text-gray-600 hover:text-red-400 flex items-center gap-1.5 transition w-full text-left"
+          className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-xs text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"
         >
-          <span>→</span> Sair
+          <span className="text-sm">→</span> Sair
         </button>
       </div>
     </aside>

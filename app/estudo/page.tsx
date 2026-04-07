@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { verifyAccessToken } from "@/lib/auth/jwt";
 import prisma from "@/lib/prisma";
 import MateriasCliente from "./MateriasCliente";
+import UserMenuWidget from "@/components/UserMenuWidget";
 
 export const dynamic = "force-dynamic";
 
@@ -28,6 +29,9 @@ async function getDados() {
     select: { id: true, nome: true, email: true, role: true, createdAt: true },
   });
   if (!user) redirect("/login");
+
+  // Admin não usa /estudo — tem o painel próprio
+  if (user.role === "ADMIN") redirect("/admin");
 
   // Busca todas as matérias ativas
   const todasMaterias = await prisma.materia.findMany({
@@ -66,13 +70,15 @@ async function getDados() {
   return { user, todasMaterias, idsComAcesso, statusSolicitacao };
 }
 
-export default async function EstudoIndexPage() {
-  const { user, todasMaterias, idsComAcesso, statusSolicitacao } = await getDados();
+type PageProps = { searchParams: Promise<{ acesso?: string }> };
 
-  const primeiroNome = user.nome.split(" ")[0];
+export default async function EstudoIndexPage({ searchParams }: PageProps) {
+  const { user, todasMaterias, idsComAcesso, statusSolicitacao } = await getDados();
+  const sp = await searchParams;
+  const acessoNegado = sp.acesso === "negado";
+
   const materiasComAcesso = todasMaterias.filter((m) => idsComAcesso.has(m.id));
-  const materiasDisponiveis = todasMaterias.filter((m) => !idsComAcesso.has(m.id));
-  const isAdmin = user.role === "ADMIN";
+  const materiasParaSolicitar = todasMaterias.filter((m) => !idsComAcesso.has(m.id));
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
@@ -87,29 +93,24 @@ export default async function EstudoIndexPage() {
               CONCURSOS
             </span>
           </div>
-          <div className="flex items-center gap-4">
-            {isAdmin && (
-              <Link
-                href="/admin"
-                className="text-xs text-gray-500 hover:text-gray-300 border border-gray-700 hover:border-gray-500 rounded-lg px-3 py-1.5 transition-colors"
-              >
-                ⚙ Admin
-              </Link>
-            )}
-            {/* Info do usuário */}
-            <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-full bg-emerald-600/30 border border-emerald-500/40 flex items-center justify-center text-xs font-bold text-emerald-400">
-                {primeiroNome.charAt(0).toUpperCase()}
-              </div>
-              <span className="hidden sm:inline text-sm text-gray-400">{primeiroNome}</span>
-            </div>
-            <LogoutAction />
-          </div>
+          <UserMenuWidget nome={user.nome} perfilHref="/estudo/perfil" />
         </div>
       </nav>
 
+      {/* Banner: acesso negado */}
+      {acessoNegado && (
+        <div className="bg-red-500/10 border-b border-red-500/20">
+          <div className="max-w-6xl mx-auto px-6 py-3 flex items-center gap-3">
+            <span className="text-red-400 text-sm">🔒</span>
+            <p className="text-red-400 text-sm">
+              Você não tem acesso a essa matéria. Solicite abaixo ou aguarde aprovação.
+            </p>
+          </div>
+        </div>
+      )}
+
       <main className="max-w-6xl mx-auto px-6 py-10">
-        {/* Perfil rápido */}
+        {/* Perfil do usuário */}
         <div className="flex items-center gap-4 mb-10 p-5 bg-gray-900 border border-gray-800 rounded-2xl">
           <div className="w-12 h-12 rounded-xl bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-xl font-bold text-emerald-400 shrink-0">
             {user.nome.charAt(0).toUpperCase()}
@@ -119,12 +120,8 @@ export default async function EstudoIndexPage() {
             <p className="text-gray-400 text-sm truncate">{user.email}</p>
           </div>
           <div className="hidden sm:flex flex-col items-end gap-1">
-            <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border ${
-              isAdmin
-                ? "bg-purple-900/40 text-purple-400 border-purple-700/40"
-                : "bg-gray-700/40 text-gray-400 border-gray-600/40"
-            }`}>
-              {isAdmin ? "Admin" : "Usuário"}
+            <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium border bg-gray-700/40 text-gray-400 border-gray-600/40">
+              Usuário
             </span>
             <span className="text-[11px] text-gray-600">
               Desde {new Date(user.createdAt).toLocaleDateString("pt-BR", { month: "short", year: "numeric" })}
@@ -133,51 +130,43 @@ export default async function EstudoIndexPage() {
         </div>
 
         {/* Matérias com acesso */}
-        {(isAdmin ? todasMaterias : materiasComAcesso).length > 0 ? (
+        {materiasComAcesso.length > 0 ? (
           <section className="mb-12">
-            <div className="flex items-center justify-between mb-5">
-              <div>
-                <h2 className="text-xl font-bold text-white">
-                  {isAdmin ? "Todas as matérias" : "Suas matérias"}
-                </h2>
-                <p className="text-gray-500 text-sm mt-0.5">
-                  {isAdmin
-                    ? `${todasMaterias.length} matéria${todasMaterias.length !== 1 ? "s" : ""} no sistema`
-                    : `${materiasComAcesso.length} matéria${materiasComAcesso.length !== 1 ? "s" : ""} liberada${materiasComAcesso.length !== 1 ? "s" : ""}`}
-                </p>
-              </div>
+            <div className="mb-5">
+              <h2 className="text-xl font-bold text-white">Suas matérias</h2>
+              <p className="text-gray-500 text-sm mt-0.5">
+                {materiasComAcesso.length} matéria{materiasComAcesso.length !== 1 ? "s" : ""} liberada{materiasComAcesso.length !== 1 ? "s" : ""}
+              </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-              {(isAdmin ? todasMaterias : materiasComAcesso).map((m) => (
-                <MateriaCard key={m.id} materia={m} status="acesso" />
+              {materiasComAcesso.map((m) => (
+                <MateriaCard key={m.id} materia={m} />
               ))}
             </div>
           </section>
         ) : (
-          /* Estado vazio — sem nenhuma matéria liberada */
           <div className="text-center py-20 bg-gray-900 border border-gray-800 rounded-3xl mb-12">
             <div className="text-5xl mb-4">🔒</div>
             <h3 className="text-white font-semibold text-lg mb-2">
               Nenhuma matéria disponível ainda
             </h3>
             <p className="text-gray-400 text-sm max-w-sm mx-auto leading-relaxed">
-              Solicite acesso às matérias abaixo ou entre em contato com o
-              administrador para liberar seu acesso.
+              Solicite acesso às matérias abaixo ou entre em contato com o administrador.
             </p>
           </div>
         )}
 
-        {/* Matérias disponíveis para solicitar (somente para não-admin) */}
-        {!isAdmin && materiasDisponiveis.length > 0 && (
+        {/* Matérias para solicitar */}
+        {materiasParaSolicitar.length > 0 && (
           <section>
             <div className="mb-5">
               <h2 className="text-xl font-bold text-white">Solicitar acesso</h2>
               <p className="text-gray-500 text-sm mt-0.5">
-                Clique em uma matéria para solicitar acesso — o admin será notificado.
+                Clique em uma matéria para solicitar acesso — o administrador será notificado.
               </p>
             </div>
             <MateriasCliente
-              materias={materiasDisponiveis.map((m) => ({
+              materias={materiasParaSolicitar.map((m) => ({
                 id: m.id,
                 slug: m.slug,
                 nome: m.nome,
@@ -293,24 +282,3 @@ function MateriaCard({
   );
 }
 
-// ── Server action de logout ─────────────────────────────────────────
-async function logoutAction() {
-  "use server";
-  const cookieStore = await cookies();
-  cookieStore.set("access_token", "", { maxAge: 0, path: "/" });
-  cookieStore.set("refresh_token", "", { maxAge: 0, path: "/" });
-  redirect("/login");
-}
-
-function LogoutAction() {
-  return (
-    <form action={logoutAction}>
-      <button
-        type="submit"
-        className="text-xs text-gray-600 hover:text-red-400 transition-colors"
-      >
-        Sair
-      </button>
-    </form>
-  );
-}

@@ -46,7 +46,13 @@ export async function GET(req: NextRequest) {
       role: user.role,
     });
 
-    const response = NextResponse.redirect(new URL(next, req.url));
+    // Garante que admin vai para /admin e user vai para /estudo
+    const destino =
+      user.role === "ADMIN"
+        ? next.startsWith("/admin") ? next : "/admin"
+        : next.startsWith("/estudo") ? next : "/estudo";
+
+    const response = NextResponse.redirect(new URL(destino, req.url));
     response.cookies.set("access_token", accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

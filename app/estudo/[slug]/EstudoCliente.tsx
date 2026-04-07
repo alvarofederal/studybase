@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
+import UserMenuWidget from "@/components/UserMenuWidget";
 
 type Opcao = { id: string; texto: string; correta: boolean; ordem: number };
 type Quiz = { id: string; pergunta: string; explicacao: string | null; opcoes: Opcao[] };
@@ -32,7 +33,9 @@ const TAG_COLORS: Record<string, string> = {
   ok:  "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
 };
 
-export default function EstudoCliente({ materia }: { materia: Materia }) {
+type UserInfo = { nome: string; id: string };
+
+export default function EstudoCliente({ materia, user }: { materia: Materia; user: UserInfo }) {
   const [topicoAtivo, setTopicoAtivo] = useState<Topico | null>(null);
   const [abaAtiva, setAbaAtiva] = useState<"conteudo" | "quiz" | "flashcards">("conteudo");
   const [blocoAbertoId, setBlocoAbertoId] = useState<string | null>(null);
@@ -97,21 +100,24 @@ export default function EstudoCliente({ materia }: { materia: Materia }) {
   return (
     <div className="min-h-screen bg-gray-950 text-white flex flex-col">
       {/* Top Bar */}
-      <header className="h-12 bg-gray-900 border-b border-gray-800 flex items-center px-4 gap-4 shrink-0 z-10">
-        <Link href="/" className="text-gray-400 hover:text-white transition-colors text-sm flex items-center gap-1.5">
-          ← Início
+      <header className="h-12 bg-gray-900 border-b border-gray-800 flex items-center px-4 gap-3 shrink-0 z-10">
+        <Link href="/estudo" className="text-gray-400 hover:text-white transition-colors text-sm flex items-center gap-1.5 shrink-0">
+          ← Minhas matérias
         </Link>
         <span className="text-gray-700">|</span>
         <span className="text-sm text-white font-medium truncate flex-1">
           {materia.icone} {materia.nome}
         </span>
-        <div className="flex items-center gap-4 text-xs text-gray-500 shrink-0">
+        <div className="hidden md:flex items-center gap-4 text-xs text-gray-500 shrink-0">
           <span>📚 {totalTopicos} tópicos</span>
           <span>🧠 {totalQuizzes} questões</span>
           <span>🃏 {totalFlashcards} cards</span>
           {acertos > 0 && (
             <span className="text-emerald-400 font-semibold">✓ {acertos} acerto{acertos !== 1 ? "s" : ""}</span>
           )}
+        </div>
+        <div className="shrink-0 border-l border-gray-800 pl-3 ml-1">
+          <UserMenuWidget nome={user.nome} perfilHref="/estudo/perfil" />
         </div>
       </header>
 

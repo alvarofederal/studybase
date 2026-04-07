@@ -58,10 +58,17 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // Rota de admin: verifica role
+  // ADMIN tentando acessar /estudo → manda para /admin
+  if (!isAdmin && payload.role === "ADMIN") {
+    const url = request.nextUrl.clone();
+    url.pathname = "/admin";
+    return NextResponse.redirect(url);
+  }
+
+  // USER tentando acessar /admin → manda para /estudo
   if (isAdmin && payload.role !== "ADMIN") {
     const url = request.nextUrl.clone();
-    url.pathname = "/";
+    url.pathname = "/estudo";
     return NextResponse.redirect(url);
   }
 
