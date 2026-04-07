@@ -30,13 +30,13 @@ export async function POST(req: NextRequest) {
 
   const user = await prisma.user.findUnique({
     where: { id: session.sub },
-    select: { id: true, senhaHash: true },
+    select: { id: true, senha: true },
   });
   if (!user) {
     return NextResponse.json({ error: "Usuário não encontrado." }, { status: 404 });
   }
 
-  const ok = await comparePassword(senhaAtual, user.senhaHash);
+  const ok = await comparePassword(senhaAtual, user.senha);
   if (!ok) {
     return NextResponse.json({ error: "Senha atual incorreta." }, { status: 400 });
   }
@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
   const novoHash = await hashPassword(novaSenha);
   await prisma.user.update({
     where: { id: user.id },
-    data: { senhaHash: novoHash },
+    data: { senha: novoHash },
   });
 
   return NextResponse.json({ ok: true });
