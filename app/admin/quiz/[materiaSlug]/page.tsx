@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 type Opcao   = { id: string; texto: string; correta: boolean; ordem: number };
 type Quiz    = { id: string; pergunta: string; explicacao: string | null; opcoes: Opcao[]; topicoTitulo?: string; blocoNome?: string };
 type Topico  = { id: string; titulo: string; slug: string };

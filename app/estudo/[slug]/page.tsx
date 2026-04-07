@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { getMateriaData } from "@/lib/getMateriaData";
 import EstudoCliente from "./EstudoCliente";
 
+export const dynamic = "force-dynamic";
+
 type Props = { params: Promise<{ slug: string }> };
 
 export async function generateMetadata({ params }: Props) {

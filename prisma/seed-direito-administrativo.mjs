@@ -1002,10 +1002,15 @@ async function main() {
     await prisma.quiz.create({
       data: {
         pergunta: q.pergunta,
-        opcoes: JSON.stringify(q.opcoes),
-        respostaCorreta: q.respostaCorreta,
         explicacao: q.explicacao,
         topicoId,
+        opcoes: {
+          create: q.opcoes.map((texto, i) => ({
+            texto,
+            correta: i === q.respostaCorreta,
+            ordem: i,
+          })),
+        },
       },
     });
     console.log(`  ✅ Quiz: ${q.pergunta.slice(0, 60)}...`);

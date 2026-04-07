@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 // ── Tipos ─────────────────────────────────────────────────────
 type Opcao   = { id?: string; texto: string; correta: boolean };
 type Quiz    = { id: string; pergunta: string; explicacao: string | null; opcoes: Opcao[] };

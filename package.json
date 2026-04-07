@@ -4,8 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build:double": "next build && next build",
-    "build": "prisma generate && prisma db push --accept-data-loss && next build",
+    "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
     "db:push": "prisma db push",
@@ -16,7 +15,8 @@
     "db:reset": "prisma migrate reset",
     "db:create-tables": "node prisma/create-tables.mjs",
     "db:seed:kb": "node prisma/seed-conhecimentos-bancarios.mjs",
-    "db:seed:da": "node prisma/seed-direito-administrativo.mjs"
+    "db:seed:da": "node prisma/seed-direito-administrativo.mjs",
+    "db:seed:mf": "node prisma/seed-matematica-financeira.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
@@ -38,7 +38,6 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.2.2",
-    "tailwindcss": "^4",
     "typescript": "^5"
   },
   "prisma": {

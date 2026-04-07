@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
+export const dynamic = "force-dynamic";
+
 type Flashcard = {
   id: string;
   frente: string;
