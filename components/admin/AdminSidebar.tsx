@@ -14,6 +14,7 @@ type Materia = {
 export default function AdminSidebar() {
   const pathname = usePathname();
   const [materias, setMaterias] = useState<Materia[]>([]);
+  const [pendentes, setPendentes] = useState(0);
 
   useEffect(() => {
     fetch("/api/materias")
@@ -22,16 +23,30 @@ export default function AdminSidebar() {
       .catch(() => {});
   }, []);
 
+  // Busca contagem de solicitações pendentes a cada 30s
+  useEffect(() => {
+    function buscar() {
+      fetch("/api/admin/solicitacoes/pendentes")
+        .then((r) => r.json())
+        .then((d) => setPendentes(d.total ?? 0))
+        .catch(() => {});
+    }
+    buscar();
+    const interval = setInterval(buscar, 30_000);
+    return () => clearInterval(interval);
+  }, []);
+
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
 
   const navItems = [
-    { href: "/admin", label: "Dashboard", icon: "⊞", exact: true },
-    { href: "/admin/materias", label: "Matérias", icon: "📚", exact: false },
-    { href: "/admin/quiz", label: "Quiz", icon: "🧠", exact: false },
-    { href: "/admin/flashcards", label: "Flashcards", icon: "🃏", exact: false },
-    { href: "/admin/usuarios", label: "Usuários", icon: "👥", exact: false },
-    { href: "/admin/context", label: "Contexto IA", icon: "🤖", exact: false },
+    { href: "/admin",              label: "Dashboard",    icon: "⊞", exact: true,  badge: 0 },
+    { href: "/admin/materias",     label: "Matérias",     icon: "📚", exact: false, badge: 0 },
+    { href: "/admin/quiz",         label: "Quiz",         icon: "🧠", exact: false, badge: 0 },
+    { href: "/admin/flashcards",   label: "Flashcards",   icon: "🃏", exact: false, badge: 0 },
+    { href: "/admin/solicitacoes", label: "Solicitações", icon: "🔔", exact: false, badge: pendentes },
+    { href: "/admin/usuarios",     label: "Usuários",     icon: "👥", exact: false, badge: 0 },
+    { href: "/admin/context",      label: "Contexto IA",  icon: "🤖", exact: false, badge: 0 },
   ];
 
   async function handleLogout() {
@@ -55,7 +70,7 @@ export default function AdminSidebar() {
 
       {/* Nav principal */}
       <nav className="px-2 py-3 space-y-0.5">
-        {navItems.map(({ href, label, icon, exact }) => {
+        {navItems.map(({ href, label, icon, exact, badge }) => {
           const active = exact ? pathname === href : isActive(href) && href !== "/admin";
           const dashboardActive = href === "/admin" && pathname === "/admin";
           const finalActive = dashboardActive || (!exact && active);
@@ -70,7 +85,12 @@ export default function AdminSidebar() {
               }`}
             >
               <span className="text-base">{icon}</span>
-              {label}
+              <span className="flex-1">{label}</span>
+              {badge > 0 && (
+                <span className="min-w-[18px] h-[18px] px-1 rounded-full bg-amber-500 text-gray-950 text-[10px] font-black flex items-center justify-center leading-none">
+                  {badge > 99 ? "99+" : badge}
+                </span>
+              )}
             </Link>
           );
         })}
