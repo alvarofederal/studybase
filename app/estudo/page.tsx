@@ -140,7 +140,7 @@ export default async function EstudoIndexPage({ searchParams }: PageProps) {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
               {materiasComAcesso.map((m) => (
-                <MateriaCard key={m.id} materia={m} />
+                <MateriaCard key={m.id} materia={m} status="acesso" />
               ))}
             </div>
           </section>

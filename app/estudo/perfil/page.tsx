@@ -35,7 +35,7 @@ async function getDados() {
     include: {
       materia: { select: { id: true, nome: true, icone: true, slug: true } },
     },
-    orderBy: { criadoEm: "asc" },
+    orderBy: { createdAt: "asc" },
   });
 
   return { user, materias };
