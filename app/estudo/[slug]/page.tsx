@@ -57,11 +57,12 @@ export default async function EstudoPage({ params }: Props) {
         materiaId: materia.id,
       },
     },
-    select: { id: true },
+    select: { id: true, expiresAt: true },
   });
 
-  if (!acesso) {
-    // Usuário não tem permissão — volta para /estudo com aviso via searchParam
+  // Sem acesso ou acesso expirado → redireciona
+  const agora = new Date();
+  if (!acesso || (acesso.expiresAt !== null && acesso.expiresAt <= agora)) {
     redirect("/estudo?acesso=negado");
   }
 

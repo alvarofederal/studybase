@@ -185,10 +185,11 @@ model PasswordResetToken {
 // USER MATERIA — quais matérias o usuário pode acessar
 // ─────────────────────────────────────────────
 model UserMateria {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   userId    String
   materiaId String
-  createdAt DateTime @default(now())
+  expiresAt DateTime?           // null = legado sem expiração; novo padrão: +30 dias
+  createdAt DateTime  @default(now())
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   materia Materia @relation(fields: [materiaId], references: [id], onDelete: Cascade)

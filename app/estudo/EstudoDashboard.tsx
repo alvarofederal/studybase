@@ -155,22 +155,8 @@ function SidebarContent({
         </div>
       )}
 
-      {/* Rodapé */}
-      <div className="mx-3 mb-4 mt-4 pt-4 border-t border-gray-800 space-y-1 shrink-0">
-        <Link
-          href="/estudo/perfil"
-          onClick={onClose}
-          className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-500 hover:text-white hover:bg-gray-800 transition-colors"
-        >
-          <span>👤</span> Meu perfil
-        </Link>
-        <button
-          onClick={onLogout}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-500 hover:text-red-400 hover:bg-red-500/10 active:bg-red-500/10 transition-colors text-left"
-        >
-          <span>↗</span> Sair
-        </button>
-      </div>
+      {/* Espaço inferior */}
+      <div className="mb-4" />
     </div>
   );
 }
@@ -189,6 +175,7 @@ interface Props {
   materiasComAcesso: Materia[];
   materiasParaSolicitar: Materia[];
   statusSolicitacao: Record<string, string>;
+  expiresAtMap: Record<string, string | null>;
   acessoNegado: boolean;
 }
 
@@ -197,6 +184,7 @@ export default function EstudoDashboard({
   materiasComAcesso,
   materiasParaSolicitar,
   statusSolicitacao,
+  expiresAtMap,
   acessoNegado,
 }: Props) {
   const [sidebarAberta, setSidebarAberta] = useState(false);
@@ -230,11 +218,12 @@ export default function EstudoDashboard({
   return (
     <div className="h-screen bg-gray-950 text-white flex flex-col overflow-hidden">
 
-      {/* ── Top bar mobile ──────────────────────────────────── */}
-      <header className="lg:hidden h-14 bg-gray-900 border-b border-gray-800 flex items-center px-4 gap-3 shrink-0 z-20">
+      {/* ── Top bar (sempre visível) ────────────────────────── */}
+      <header className="h-14 bg-gray-900 border-b border-gray-800 flex items-center px-4 gap-3 shrink-0 z-20">
+        {/* Hambúrguer — só mobile */}
         <button
           onClick={() => setSidebarAberta(true)}
-          className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-800 active:bg-gray-700 text-gray-400 shrink-0"
+          className="lg:hidden w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-800 active:bg-gray-700 text-gray-400 shrink-0"
           aria-label="Menu"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
@@ -244,12 +233,32 @@ export default function EstudoDashboard({
         <span className="text-base font-black bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent flex-1">
           StudyBase
         </span>
-        <Link
-          href="/estudo/perfil"
-          className="w-8 h-8 rounded-full bg-emerald-600/30 border border-emerald-500/40 flex items-center justify-center text-xs font-bold text-emerald-400"
-        >
-          {inicial}
-        </Link>
+        {/* Avatar + nome → perfil | botão Sair */}
+        <div className="flex items-center gap-0.5">
+          <Link
+            href="/estudo/perfil"
+            className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-800 active:bg-gray-800 transition-colors group"
+            title="Meu perfil"
+          >
+            <div className="w-8 h-8 rounded-full bg-emerald-600/30 border border-emerald-500/40 flex items-center justify-center text-xs font-bold text-emerald-400 group-hover:border-emerald-400/60 active:border-emerald-400/60 transition-colors shrink-0">
+              {inicial}
+            </div>
+            <span className="hidden sm:inline text-sm text-gray-300 group-hover:text-white transition-colors max-w-[120px] truncate">
+              {primeiroNome}
+            </span>
+          </Link>
+          <button
+            onClick={handleLogout}
+            className="flex items-center justify-center w-8 h-8 sm:w-auto sm:h-auto sm:px-2.5 sm:py-1.5 rounded-lg text-gray-500 hover:text-red-400 hover:bg-red-500/10 active:bg-red-500/10 active:text-red-400 transition-colors"
+            title="Sair"
+            aria-label="Sair"
+          >
+            <svg className="sm:hidden w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
+            </svg>
+            <span className="hidden sm:inline text-xs">Sair</span>
+          </button>
+        </div>
       </header>
 
       <div className="flex flex-1 overflow-hidden">
@@ -344,9 +353,13 @@ export default function EstudoDashboard({
                     </p>
                   </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
                   {materiasComAcesso.map((m) => (
-                    <MateriaCard key={m.id} materia={m} />
+                    <MateriaCard
+                      key={m.id}
+                      materia={m}
+                      expiresAt={expiresAtMap[m.id] ?? null}
+                    />
                   ))}
                 </div>
               </section>
@@ -393,18 +406,39 @@ export default function EstudoDashboard({
   );
 }
 
+/* ── helpers de expiração ─────────────────────────────────── */
+function infoExpiracao(expiresAt: string | null): {
+  texto: string;
+  cor: "emerald" | "red";
+} | null {
+  if (!expiresAt) return null;           // legado sem expiração
+  const diff = new Date(expiresAt).getTime() - Date.now();
+  const dias = Math.ceil(diff / (1000 * 60 * 60 * 24));
+  if (dias <= 0) return { texto: "Expirado",           cor: "red"     };
+  if (dias <= 7) return { texto: `Expira em ${dias}d`, cor: "red"     };
+  const data = new Date(expiresAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+  return         { texto: `Válido até ${data}`,         cor: "emerald" };
+}
+
 /* ── Card de matéria ─────────────────────────────────────── */
-function MateriaCard({ materia }: { materia: Materia }) {
+function MateriaCard({
+  materia,
+  expiresAt,
+}: {
+  materia: Materia;
+  expiresAt: string | null;
+}) {
   const totalTopicos    = materia.blocos.reduce((a, b) => a + b.topicos.length, 0);
   const totalQuizzes    = materia.blocos.reduce((a, b) => a + b.topicos.reduce((c, t) => c + t._count.quizzes, 0), 0);
   const totalFlashcards = materia.blocos.reduce((a, b) => a + b.topicos.reduce((c, t) => c + t._count.flashcards, 0), 0);
+  const expInfo = infoExpiracao(expiresAt);
 
   return (
     <Link
       href={`/estudo/${materia.slug}`}
       className="group flex flex-col bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden hover:border-emerald-500/50 active:border-emerald-500/50 transition-all hover:shadow-[0_0_30px_-8px_rgba(16,185,129,0.25)]"
     >
-      <div className="h-1 bg-gradient-to-r from-emerald-500 to-teal-400" />
+      <div className={`h-1 bg-gradient-to-r ${expInfo?.cor === "red" ? "from-red-500 to-rose-400" : "from-emerald-500 to-teal-400"}`} />
 
       <div className="flex-1 p-4 sm:p-5">
         <div className="flex items-start gap-3 mb-4">
@@ -451,8 +485,19 @@ function MateriaCard({ materia }: { materia: Materia }) {
 
       <div className="border-t border-gray-800 px-4 sm:px-5 py-3 flex items-center justify-between bg-gray-900/30">
         <div className="flex items-center gap-1.5">
-          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-[11px] text-gray-500">Liberado</span>
+          {expInfo ? (
+            <>
+              <span className={`w-1.5 h-1.5 rounded-full ${expInfo.cor === "red" ? "bg-red-400 animate-pulse" : "bg-emerald-400"}`} />
+              <span className={`text-[11px] ${expInfo.cor === "red" ? "text-red-400" : "text-gray-500"}`}>
+                {expInfo.texto}
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span className="text-[11px] text-gray-500">Liberado</span>
+            </>
+          )}
         </div>
         <span className="text-xs font-semibold text-emerald-400 group-hover:translate-x-1 transition-transform inline-block">
           Estudar →

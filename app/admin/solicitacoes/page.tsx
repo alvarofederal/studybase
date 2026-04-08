@@ -9,8 +9,20 @@ interface Solicitacao {
   id: string;
   status: Status;
   createdAt: string;
+  expiresAt: string | null;
   user: { id: string; nome: string; email: string };
   materia: { id: string; nome: string; icone: string | null; slug: string };
+}
+
+function ExpiresAtBadge({ expiresAt }: { expiresAt: string | null }) {
+  if (!expiresAt) return null;
+  const diff = new Date(expiresAt).getTime() - Date.now();
+  const dias  = Math.ceil(diff / (1000 * 60 * 60 * 24));
+  const data  = new Date(expiresAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
+
+  if (dias <= 0) return <span className="text-xs text-red-400 font-medium">Expirado</span>;
+  if (dias <= 7) return <span className="text-xs text-red-400 font-medium">Expira em {dias}d</span>;
+  return               <span className="text-xs text-emerald-500">Válido até {data}</span>;
 }
 
 const ABAS: { label: string; value: Status; cor: string }[] = [
@@ -181,16 +193,20 @@ export default function SolicitacoesPage() {
                     </div>
                   </div>
 
-                  {/* Data */}
+                  {/* Data + validade */}
                   <div className="hidden sm:block text-right shrink-0">
                     <p className="text-gray-500 text-xs">
                       {new Date(s.createdAt).toLocaleDateString("pt-BR")}
                     </p>
-                    <p className="text-gray-600 text-[11px]">
-                      {new Date(s.createdAt).toLocaleTimeString("pt-BR", {
-                        hour: "2-digit", minute: "2-digit",
-                      })}
-                    </p>
+                    {s.status === "APROVADA" && s.expiresAt ? (
+                      <ExpiresAtBadge expiresAt={s.expiresAt} />
+                    ) : (
+                      <p className="text-gray-600 text-[11px]">
+                        {new Date(s.createdAt).toLocaleTimeString("pt-BR", {
+                          hour: "2-digit", minute: "2-digit",
+                        })}
+                      </p>
+                    )}
                   </div>
 
                   {/* Ações */}

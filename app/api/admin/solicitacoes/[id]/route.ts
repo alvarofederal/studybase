@@ -26,7 +26,9 @@ export async function PUT(req: NextRequest, { params }: Params) {
   }
 
   if (acao === "aprovar") {
-    // Usa transaction: atualiza status + libera acesso
+    // Acesso válido por 30 dias a partir de agora
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+
     await prisma.$transaction([
       prisma.solicitacaoMateria.update({
         where: { id },
@@ -39,10 +41,11 @@ export async function PUT(req: NextRequest, { params }: Params) {
             materiaId: solicitacao.materiaId,
           },
         },
-        update: {},
+        update: { expiresAt },   // renova validade se já existia
         create: {
           userId: solicitacao.userId,
           materiaId: solicitacao.materiaId,
+          expiresAt,
         },
       }),
     ]);

@@ -46,11 +46,24 @@ async function getDados() {
     },
   });
 
+  const agora = new Date();
+
+  // Todos os acessos do usuário (incluindo expirados)
   const userMaterias = await prisma.userMateria.findMany({
     where: { userId: user.id },
-    select: { materiaId: true },
+    select: { materiaId: true, expiresAt: true },
   });
-  const idsComAcesso = new Set(userMaterias.map((um) => um.materiaId));
+
+  // Mapa: materiaId → expiresAt (null = legado sem expiração)
+  const acessoMap = new Map<string, Date | null>();
+  for (const um of userMaterias) acessoMap.set(um.materiaId, um.expiresAt);
+
+  // Acesso ativo = sem expiração (legado) ou dentro do prazo
+  const idsAtivos = new Set(
+    [...acessoMap.entries()]
+      .filter(([, exp]) => exp === null || exp > agora)
+      .map(([id]) => id),
+  );
 
   const solicitacoes = await prisma.solicitacaoMateria.findMany({
     where: { userId: user.id },
@@ -59,17 +72,25 @@ async function getDados() {
   const statusSolicitacao: Record<string, string> = {};
   for (const s of solicitacoes) statusSolicitacao[s.materiaId] = s.status;
 
-  return { user, todasMaterias, idsComAcesso, statusSolicitacao };
+  // expiresAt por materiaId (apenas para os ativos, para exibir nos cards)
+  const expiresAtMap: Record<string, string | null> = {};
+  for (const [id, exp] of acessoMap.entries()) {
+    if (idsAtivos.has(id)) {
+      expiresAtMap[id] = exp ? exp.toISOString() : null;
+    }
+  }
+
+  return { user, todasMaterias, idsAtivos, statusSolicitacao, expiresAtMap };
 }
 
 type PageProps = { searchParams: Promise<{ acesso?: string }> };
 
 export default async function EstudoIndexPage({ searchParams }: PageProps) {
-  const { user, todasMaterias, idsComAcesso, statusSolicitacao } = await getDados();
+  const { user, todasMaterias, idsAtivos, statusSolicitacao, expiresAtMap } = await getDados();
   const sp = await searchParams;
 
-  const materiasComAcesso     = todasMaterias.filter((m) => idsComAcesso.has(m.id));
-  const materiasParaSolicitar = todasMaterias.filter((m) => !idsComAcesso.has(m.id));
+  const materiasComAcesso     = todasMaterias.filter((m) => idsAtivos.has(m.id));
+  const materiasParaSolicitar = todasMaterias.filter((m) => !idsAtivos.has(m.id));
 
   return (
     <EstudoDashboard
@@ -77,6 +98,7 @@ export default async function EstudoIndexPage({ searchParams }: PageProps) {
       materiasComAcesso={materiasComAcesso}
       materiasParaSolicitar={materiasParaSolicitar}
       statusSolicitacao={statusSolicitacao}
+      expiresAtMap={expiresAtMap}
       acessoNegado={sp.acesso === "negado"}
     />
   );
