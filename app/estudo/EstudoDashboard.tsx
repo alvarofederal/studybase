@@ -28,12 +28,151 @@ interface User {
   email: string;
   createdAt: Date;
 }
-interface Props {
+
+/* ── props da sidebar ────────────────────────────────────── */
+interface SidebarProps {
   user: User;
+  inicial: string;
   materiasComAcesso: Materia[];
-  materiasParaSolicitar: Materia[];
-  statusSolicitacao: Record<string, string>;
-  acessoNegado: boolean;
+  totalMaterias: number;
+  totalTopicos: number;
+  totalQuizzes: number;
+  totalFlashcards: number;
+  onClose?: () => void;
+  onLogout: () => void;
+}
+
+/* ── sidebar (componente externo ao dashboard) ───────────── */
+function SidebarContent({
+  user,
+  inicial,
+  materiasComAcesso,
+  totalMaterias,
+  totalTopicos,
+  totalQuizzes,
+  totalFlashcards,
+  onClose,
+  onLogout,
+}: SidebarProps) {
+  return (
+    <div className="flex flex-col h-full overflow-y-auto">
+      {/* Logo */}
+      <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between shrink-0">
+        <div className="flex items-center gap-2">
+          <span className="text-base font-black bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
+            StudyBase
+          </span>
+          <span className="text-[9px] text-gray-600 font-mono bg-gray-800/80 border border-gray-700 px-1.5 py-0.5 rounded">
+            CONCURSOS
+          </span>
+        </div>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-800 active:bg-gray-700"
+          >
+            ✕
+          </button>
+        )}
+      </div>
+
+      {/* Card do usuário */}
+      <Link
+        href="/estudo/perfil"
+        onClick={onClose}
+        className="mx-3 mt-4 flex items-center gap-3 p-3 rounded-xl bg-gray-800/50 border border-gray-700/50 hover:border-emerald-500/40 active:border-emerald-500/40 transition-colors group"
+      >
+        <div className="w-10 h-10 rounded-full bg-emerald-600/30 border border-emerald-500/40 flex items-center justify-center text-sm font-bold text-emerald-400 shrink-0 group-hover:border-emerald-400/60 transition-colors">
+          {inicial}
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-semibold text-white truncate">{user.nome}</p>
+          <p className="text-[11px] text-gray-500 truncate">{user.email}</p>
+        </div>
+        <span className="text-gray-600 text-xs group-hover:text-emerald-500 transition-colors shrink-0">→</span>
+      </Link>
+
+      {/* Stats */}
+      <div className="mx-3 mt-4 grid grid-cols-2 gap-2">
+        {[
+          { label: "Matérias",   value: materiasComAcesso.length, icon: "📚", sub: `de ${totalMaterias}` },
+          { label: "Tópicos",    value: totalTopicos,              icon: "📝", sub: "disponíveis"        },
+          { label: "Questões",   value: totalQuizzes,              icon: "🧠", sub: "de quiz"            },
+          { label: "Flashcards", value: totalFlashcards,           icon: "🃏", sub: "para revisar"       },
+        ].map(({ label, value, icon, sub }) => (
+          <div key={label} className="bg-gray-800/40 border border-gray-700/40 rounded-xl p-3 text-center">
+            <div className="text-lg mb-0.5">{icon}</div>
+            <div className="text-xl font-bold text-white">{value}</div>
+            <div className="text-[10px] font-semibold text-gray-400">{label}</div>
+            <div className="text-[9px] text-gray-600">{sub}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Progresso */}
+      {totalMaterias > 0 && (
+        <div className="mx-3 mt-4 p-3 bg-gray-800/40 border border-gray-700/40 rounded-xl">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Progresso</span>
+            <span className="text-[11px] text-emerald-400 font-bold">
+              {materiasComAcesso.length}/{totalMaterias}
+            </span>
+          </div>
+          <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all"
+              style={{ width: `${Math.round((materiasComAcesso.length / totalMaterias) * 100)}%` }}
+            />
+          </div>
+          <p className="text-[10px] text-gray-600 mt-1.5">
+            {totalMaterias - materiasComAcesso.length} matéria{totalMaterias - materiasComAcesso.length !== 1 ? "s" : ""} aguardando liberação
+          </p>
+        </div>
+      )}
+
+      {/* Acesso rápido */}
+      {materiasComAcesso.length > 0 && (
+        <div className="mx-3 mt-4 flex-1">
+          <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest px-1 mb-2">
+            Acesso rápido
+          </p>
+          <div className="space-y-0.5">
+            {materiasComAcesso.map((m) => (
+              <Link
+                key={m.id}
+                href={`/estudo/${m.slug}`}
+                onClick={onClose}
+                className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-gray-800 active:bg-gray-800 transition-colors group"
+              >
+                <span className="text-base shrink-0">{m.icone ?? "📖"}</span>
+                <span className="text-xs text-gray-400 group-hover:text-white transition-colors truncate flex-1">
+                  {m.nome}
+                </span>
+                <span className="text-gray-700 text-xs group-hover:text-emerald-500 transition-colors shrink-0">→</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Rodapé */}
+      <div className="mx-3 mb-4 mt-4 pt-4 border-t border-gray-800 space-y-1 shrink-0">
+        <Link
+          href="/estudo/perfil"
+          onClick={onClose}
+          className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-500 hover:text-white hover:bg-gray-800 transition-colors"
+        >
+          <span>👤</span> Meu perfil
+        </Link>
+        <button
+          onClick={onLogout}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-500 hover:text-red-400 hover:bg-red-500/10 active:bg-red-500/10 transition-colors text-left"
+        >
+          <span>↗</span> Sair
+        </button>
+      </div>
+    </div>
+  );
 }
 
 /* ── helpers ─────────────────────────────────────────────── */
@@ -44,7 +183,15 @@ function soma(materias: Materia[], fn: (t: Topico) => number) {
   );
 }
 
-/* ── componente principal ────────────────────────────────── */
+/* ── dashboard principal ─────────────────────────────────── */
+interface Props {
+  user: User;
+  materiasComAcesso: Materia[];
+  materiasParaSolicitar: Materia[];
+  statusSolicitacao: Record<string, string>;
+  acessoNegado: boolean;
+}
+
 export default function EstudoDashboard({
   user,
   materiasComAcesso,
@@ -69,128 +216,16 @@ export default function EstudoDashboard({
     router.refresh();
   }
 
-  /* ── conteúdo da sidebar (reutilizado mobile e desktop) ─ */
-  function SidebarContent({ onClose }: { onClose?: () => void }) {
-    return (
-      <div className="flex flex-col h-full overflow-y-auto">
-        {/* Logo */}
-        <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="text-base font-black bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
-              StudyBase
-            </span>
-            <span className="text-[9px] text-gray-600 font-mono bg-gray-800/80 border border-gray-700 px-1.5 py-0.5 rounded">
-              CONCURSOS
-            </span>
-          </div>
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-800 active:bg-gray-700"
-            >
-              ✕
-            </button>
-          )}
-        </div>
-
-        {/* Card do usuário */}
-        <Link
-          href="/estudo/perfil"
-          onClick={() => onClose?.()}
-          className="mx-3 mt-4 flex items-center gap-3 p-3 rounded-xl bg-gray-800/50 border border-gray-700/50 hover:border-emerald-500/40 active:border-emerald-500/40 transition-colors group"
-        >
-          <div className="w-10 h-10 rounded-full bg-emerald-600/30 border border-emerald-500/40 flex items-center justify-center text-sm font-bold text-emerald-400 shrink-0 group-hover:border-emerald-400/60 transition-colors">
-            {inicial}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-white truncate">{user.nome}</p>
-            <p className="text-[11px] text-gray-500 truncate">{user.email}</p>
-          </div>
-          <span className="text-gray-600 text-xs group-hover:text-emerald-500 transition-colors shrink-0">→</span>
-        </Link>
-
-        {/* Stats */}
-        <div className="mx-3 mt-4 grid grid-cols-2 gap-2">
-          {[
-            { label: "Matérias",   value: materiasComAcesso.length, icon: "📚", sub: `de ${totalMaterias}` },
-            { label: "Tópicos",    value: totalTopicos,              icon: "📝", sub: "disponíveis"        },
-            { label: "Questões",   value: totalQuizzes,              icon: "🧠", sub: "de quiz"            },
-            { label: "Flashcards", value: totalFlashcards,           icon: "🃏", sub: "para revisar"       },
-          ].map(({ label, value, icon, sub }) => (
-            <div key={label} className="bg-gray-800/40 border border-gray-700/40 rounded-xl p-3 text-center">
-              <div className="text-lg mb-0.5">{icon}</div>
-              <div className="text-xl font-bold text-white">{value}</div>
-              <div className="text-[10px] font-semibold text-gray-400">{label}</div>
-              <div className="text-[9px] text-gray-600">{sub}</div>
-            </div>
-          ))}
-        </div>
-
-        {/* Progresso de matérias */}
-        {totalMaterias > 0 && (
-          <div className="mx-3 mt-4 p-3 bg-gray-800/40 border border-gray-700/40 rounded-xl">
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Progresso</span>
-              <span className="text-[11px] text-emerald-400 font-bold">
-                {materiasComAcesso.length}/{totalMaterias}
-              </span>
-            </div>
-            <div className="h-1.5 bg-gray-700 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full transition-all"
-                style={{ width: `${Math.round((materiasComAcesso.length / totalMaterias) * 100)}%` }}
-              />
-            </div>
-            <p className="text-[10px] text-gray-600 mt-1.5">
-              {totalMaterias - materiasComAcesso.length} matéria{totalMaterias - materiasComAcesso.length !== 1 ? "s" : ""} aguardando liberação
-            </p>
-          </div>
-        )}
-
-        {/* Acesso rápido */}
-        {materiasComAcesso.length > 0 && (
-          <div className="mx-3 mt-4 flex-1">
-            <p className="text-[10px] font-bold text-gray-600 uppercase tracking-widest px-1 mb-2">
-              Acesso rápido
-            </p>
-            <div className="space-y-0.5">
-              {materiasComAcesso.map((m) => (
-                <Link
-                  key={m.id}
-                  href={`/estudo/${m.slug}`}
-                  onClick={() => onClose?.()}
-                  className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg hover:bg-gray-800 active:bg-gray-800 transition-colors group"
-                >
-                  <span className="text-base shrink-0">{m.icone ?? "📖"}</span>
-                  <span className="text-xs text-gray-400 group-hover:text-white transition-colors truncate flex-1">
-                    {m.nome}
-                  </span>
-                  <span className="text-gray-700 text-xs group-hover:text-emerald-500 transition-colors shrink-0">→</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Rodapé */}
-        <div className="mx-3 mb-4 mt-4 pt-4 border-t border-gray-800 space-y-1 shrink-0">
-          <Link
-            href="/estudo/perfil"
-            onClick={() => onClose?.()}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-500 hover:text-white hover:bg-gray-800 transition-colors"
-          >
-            <span>👤</span> Meu perfil
-          </Link>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-xs text-gray-500 hover:text-red-400 hover:bg-red-500/10 active:bg-red-500/10 transition-colors text-left"
-          >
-            <span>↗</span> Sair
-          </button>
-        </div>
-      </div>
-    );
-  }
+  const sidebarProps: SidebarProps = {
+    user,
+    inicial,
+    materiasComAcesso,
+    totalMaterias,
+    totalTopicos,
+    totalQuizzes,
+    totalFlashcards,
+    onLogout: handleLogout,
+  };
 
   return (
     <div className="h-screen bg-gray-950 text-white flex flex-col overflow-hidden">
@@ -219,12 +254,12 @@ export default function EstudoDashboard({
 
       <div className="flex flex-1 overflow-hidden">
 
-        {/* ══ SIDEBAR DESKTOP (sempre visível em lg+) ═══════════ */}
+        {/* ══ SIDEBAR DESKTOP (sempre visível em lg+) ══════════ */}
         <aside className="hidden lg:flex lg:flex-col w-64 xl:w-72 shrink-0 bg-gray-900 border-r border-gray-800 overflow-hidden">
-          <SidebarContent />
+          <SidebarContent {...sidebarProps} />
         </aside>
 
-        {/* ══ DRAWER MOBILE (sobrepõe o conteúdo) ══════════════ */}
+        {/* ══ DRAWER MOBILE ════════════════════════════════════ */}
         {sidebarAberta && (
           <div
             className="fixed inset-0 bg-black/60 z-30 lg:hidden"
@@ -232,20 +267,19 @@ export default function EstudoDashboard({
           />
         )}
         <div
-          className={`
-            fixed inset-y-0 left-0 z-40 w-72 bg-gray-900 border-r border-gray-800
-            flex flex-col lg:hidden
-            transform transition-transform duration-300 ease-in-out
-            ${sidebarAberta ? "translate-x-0" : "-translate-x-full"}
-          `}
+          className={[
+            "fixed inset-y-0 left-0 z-40 w-72 bg-gray-900 border-r border-gray-800",
+            "flex flex-col lg:hidden",
+            "transform transition-transform duration-300 ease-in-out",
+            sidebarAberta ? "translate-x-0" : "-translate-x-full",
+          ].join(" ")}
         >
-          <SidebarContent onClose={() => setSidebarAberta(false)} />
+          <SidebarContent {...sidebarProps} onClose={() => setSidebarAberta(false)} />
         </div>
 
         {/* ══ CONTEÚDO PRINCIPAL ════════════════════════════════ */}
         <main className="flex-1 overflow-y-auto">
 
-          {/* Banner: acesso negado */}
           {acessoNegado && (
             <div className="bg-red-500/10 border-b border-red-500/20 px-6 py-3 flex items-center gap-3">
               <span className="text-red-400">🔒</span>
@@ -257,7 +291,7 @@ export default function EstudoDashboard({
 
           <div className="p-4 sm:p-6 lg:p-8">
 
-            {/* ── Topo: saudação + stats inline ───────────────── */}
+            {/* Saudação + mini-stats (desktop) */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
               <div>
                 <h1 className="text-2xl sm:text-3xl font-black text-white">
@@ -269,7 +303,6 @@ export default function EstudoDashboard({
                     : "Solicite acesso às matérias para começar a estudar."}
                 </p>
               </div>
-              {/* Mini stats no cabeçalho (desktop) */}
               <div className="hidden lg:flex items-center gap-3 shrink-0">
                 {[
                   { v: materiasComAcesso.length, l: "Matérias",   color: "text-emerald-400" },
@@ -300,7 +333,7 @@ export default function EstudoDashboard({
               ))}
             </div>
 
-            {/* ── Matérias com acesso ─────────────────────────── */}
+            {/* Matérias com acesso */}
             {materiasComAcesso.length > 0 ? (
               <section className="mb-10">
                 <div className="flex items-center justify-between mb-5">
@@ -327,7 +360,7 @@ export default function EstudoDashboard({
               </div>
             )}
 
-            {/* ── Solicitar acesso ────────────────────────────── */}
+            {/* Solicitar acesso */}
             {materiasParaSolicitar.length > 0 && (
               <section>
                 <div className="mb-5">
@@ -360,7 +393,7 @@ export default function EstudoDashboard({
   );
 }
 
-/* ── Card de matéria com acesso ─────────────────────────── */
+/* ── Card de matéria ─────────────────────────────────────── */
 function MateriaCard({ materia }: { materia: Materia }) {
   const totalTopicos    = materia.blocos.reduce((a, b) => a + b.topicos.length, 0);
   const totalQuizzes    = materia.blocos.reduce((a, b) => a + b.topicos.reduce((c, t) => c + t._count.quizzes, 0), 0);
@@ -371,11 +404,9 @@ function MateriaCard({ materia }: { materia: Materia }) {
       href={`/estudo/${materia.slug}`}
       className="group flex flex-col bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden hover:border-emerald-500/50 active:border-emerald-500/50 transition-all hover:shadow-[0_0_30px_-8px_rgba(16,185,129,0.25)]"
     >
-      {/* Barra topo colorida */}
       <div className="h-1 bg-gradient-to-r from-emerald-500 to-teal-400" />
 
       <div className="flex-1 p-4 sm:p-5">
-        {/* Ícone + título */}
         <div className="flex items-start gap-3 mb-4">
           <div className="w-10 h-10 rounded-xl bg-gray-800 border border-gray-700 flex items-center justify-center text-xl shrink-0 group-hover:border-emerald-500/40 transition-colors">
             {materia.icone ?? "📖"}
@@ -392,7 +423,6 @@ function MateriaCard({ materia }: { materia: Materia }) {
           </div>
         </div>
 
-        {/* Stats */}
         <div className="grid grid-cols-3 gap-2 mb-3">
           {[
             { n: totalTopicos,    l: "Tópicos",  icon: "📝" },
@@ -407,7 +437,6 @@ function MateriaCard({ materia }: { materia: Materia }) {
           ))}
         </div>
 
-        {/* Blocos */}
         <div className="flex flex-wrap gap-1">
           {materia.blocos.slice(0, 3).map((b) => (
             <span key={b.id} className="text-[10px] bg-gray-800 text-gray-500 px-2 py-0.5 rounded-md truncate max-w-[110px]">
@@ -420,7 +449,6 @@ function MateriaCard({ materia }: { materia: Materia }) {
         </div>
       </div>
 
-      {/* Rodapé */}
       <div className="border-t border-gray-800 px-4 sm:px-5 py-3 flex items-center justify-between bg-gray-900/30">
         <div className="flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
