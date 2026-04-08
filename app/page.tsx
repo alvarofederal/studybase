@@ -1,10 +1,25 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { getAllMateriasData } from "@/lib/getMateriaData";
+import { verifyAccessToken } from "@/lib/auth/jwt";
+import LandingUserButtons from "@/components/LandingUserButtons";
 
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const materias = await getAllMateriasData();
+
+  // Verificar sessão para botões contextuais na navbar
+  let sessao: { sub: string; role: string } | null = null;
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("access_token")?.value;
+    if (token) {
+      sessao = await verifyAccessToken(token) as { sub: string; role: string };
+    }
+  } catch {
+    sessao = null;
+  }
 
   const totalBlocos     = materias.reduce((a, m) => a + m.blocos.length, 0);
   const totalTopicos    = materias.reduce((a, m) => a + m.blocos.reduce((b, bl) => b + bl.topicos.length, 0), 0);
@@ -32,12 +47,18 @@ export default async function Home() {
             <a href="#como-funciona" className="text-sm text-gray-400 hover:text-white transition-colors hidden sm:block">
               Como funciona
             </a>
-            <Link
-              href="/admin"
-              className="text-xs text-gray-500 hover:text-gray-300 border border-gray-700 hover:border-gray-500 rounded-lg px-3 py-1.5 transition-colors"
-            >
-              ⚙ Admin
-            </Link>
+            {sessao ? (
+              /* Logado: botão Acessar + Sair (client component) */
+              <LandingUserButtons role={sessao.role as "ADMIN" | "USER"} />
+            ) : (
+              /* Não logado: botão Entrar */
+              <Link
+                href="/login"
+                className="text-xs text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-500 rounded-lg px-3 py-1.5 transition-colors font-medium"
+              >
+                Entrar
+              </Link>
+            )}
           </div>
         </div>
       </nav>
@@ -321,7 +342,7 @@ export default async function Home() {
           <div className="flex items-center gap-6 text-xs text-gray-600">
             <a href="#materias" className="hover:text-gray-400 transition-colors">Matérias</a>
             <a href="#como-funciona" className="hover:text-gray-400 transition-colors">Como funciona</a>
-            <Link href="/admin" className="hover:text-gray-400 transition-colors">Admin</Link>
+            <Link href="/login" className="hover:text-gray-400 transition-colors">Entrar</Link>
           </div>
         </div>
       </footer>

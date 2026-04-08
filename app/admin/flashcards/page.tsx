@@ -17,7 +17,7 @@ export default async function AdminFlashcardsIndexPage() {
 
   return (
     <div className="text-white p-8">
-      <div className="max-w-5xl">
+      <div>
 
         {/* Header */}
         <div className="mb-8">

@@ -38,7 +38,7 @@ export default function AdminContextPage() {
 
   return (
     <div className="text-white p-8">
-      <div className="max-w-5xl">
+      <div>
 
         {/* Header */}
         <div className="flex items-center justify-between mb-6">

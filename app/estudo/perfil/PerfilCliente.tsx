@@ -1,14 +1,43 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-export default function PerfilCliente({ email }: { email: string }) {
+interface Props {
+  email: string;
+  showLogoutOnly?: boolean;
+}
+
+export default function PerfilCliente({ email, showLogoutOnly }: Props) {
+  const router = useRouter();
   const [senhaAtual, setSenhaAtual] = useState("");
   const [novaSenha, setNovaSenha] = useState("");
   const [confirma, setConfirma] = useState("");
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState<{ tipo: "ok" | "erro"; texto: string } | null>(null);
 
+  async function handleLogout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  }
+
+  // Renderiza apenas o botão de sair (para sidebar/topbar)
+  if (showLogoutOnly) {
+    return (
+      <button
+        onClick={handleLogout}
+        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-gray-500 hover:text-red-400 hover:bg-red-500/10 active:bg-red-500/10 active:text-red-400 transition-all"
+      >
+        <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1" />
+        </svg>
+        <span>Sair da conta</span>
+      </button>
+    );
+  }
+
+  // Formulário completo de alteração de senha
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (novaSenha !== confirma) {
@@ -44,10 +73,12 @@ export default function PerfilCliente({ email }: { email: string }) {
   }
 
   return (
-    <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 space-y-5">
+    <div className="space-y-5">
       <div>
-        <p className="text-xs text-gray-500">E-mail da conta</p>
-        <p className="text-sm text-gray-300 mt-1">{email}</p>
+        <p className="text-xs text-gray-500 mb-1">E-mail da conta</p>
+        <p className="text-sm text-gray-300 bg-gray-800/60 border border-gray-700/40 rounded-lg px-3 py-2 truncate">
+          {email}
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
