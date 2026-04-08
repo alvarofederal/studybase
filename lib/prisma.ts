@@ -24,15 +24,16 @@ function createClient() {
     user: decodeURIComponent(dbUrl.username),
     password: decodeURIComponent(dbUrl.password),
     database: dbUrl.pathname.slice(1),
-    connectionLimit: 5,
+    // Manter pool pequeno — o plano compartilhado tem limite de conexões/hora
+    connectionLimit: 2,
+    // Libera conexões ociosas rapidamente
+    idleTimeout: 10_000,
+    connectTimeout: 10_000,
   });
 
   return new PrismaClient({
     adapter,
-    log:
-      process.env.NODE_ENV === "development"
-        ? ["query", "error", "warn"]
-        : ["error"],
+    log: process.env.NODE_ENV === "development" ? ["error", "warn"] : ["error"],
   });
 }
 
