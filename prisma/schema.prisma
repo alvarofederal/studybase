@@ -85,8 +85,9 @@ model Quiz {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  topico Topico      @relation(fields: [topicoId], references: [id], onDelete: Cascade)
-  opcoes OpcaoQuiz[]
+  topico    Topico         @relation(fields: [topicoId], references: [id], onDelete: Cascade)
+  opcoes    OpcaoQuiz[]
+  respostas RespostaQuiz[]
 
   @@map("quizzes")
 }
@@ -119,7 +120,8 @@ model Flashcard {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  topico Topico @relation(fields: [topicoId], references: [id], onDelete: Cascade)
+  topico   Topico             @relation(fields: [topicoId], references: [id], onDelete: Cascade)
+  revisoes RevisaoFlashcard[]
 
   @@map("flashcards")
 }
@@ -141,6 +143,8 @@ model User {
   passwordResetTokens  PasswordResetToken[]
   materias             UserMateria[]
   solicitacoes         SolicitacaoMateria[]
+  respostasQuiz        RespostaQuiz[]
+  revisoesFlashcard    RevisaoFlashcard[]
 
   @@map("users")
 }
@@ -220,4 +224,43 @@ enum StatusSolicitacao {
   PENDENTE
   APROVADA
   REJEITADA
+}
+
+// ─────────────────────────────────────────────
+// RESPOSTA DE QUIZ — última resposta do usuário por questão
+// ─────────────────────────────────────────────
+model RespostaQuiz {
+  id        String   @id @default(cuid())
+  userId    String
+  quizId    String
+  opcaoId   String   // opção escolhida
+  correta   Boolean  // denormalizado para queries rápidas
+  topicoId  String   // denormalizado para agrupamento por tópico
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, quizId])   // upsert: uma resposta por questão por usuário
+  @@map("respostas_quiz")
+}
+
+// ─────────────────────────────────────────────
+// REVISÃO DE FLASHCARD — se o usuário soube ou não
+// ─────────────────────────────────────────────
+model RevisaoFlashcard {
+  id          String   @id @default(cuid())
+  userId      String
+  flashcardId String
+  acertou     Boolean  // true = "Sabia", false = "Não sabia"
+  topicoId    String   // denormalizado
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  flashcard Flashcard @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, flashcardId])
+  @@map("revisoes_flashcard")
 }
