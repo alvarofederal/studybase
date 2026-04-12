@@ -1,9 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 type Status = "PENDENTE" | "APROVADA" | "REJEITADA";
+
+// Informações de validade pré-computadas FORA do render (no callback do fetch)
+interface ExpiryInfo {
+  texto: string;
+  cor: "emerald" | "red";
+}
 
 interface Solicitacao {
   id: string;
@@ -12,74 +18,122 @@ interface Solicitacao {
   expiresAt: string | null;
   user: { id: string; nome: string; email: string };
   materia: { id: string; nome: string; icone: string | null; slug: string };
+  _expiry: ExpiryInfo | null; // pré-computado ao carregar, não durante render
 }
 
-function ExpiresAtBadge({ expiresAt }: { expiresAt: string | null }) {
+// Chamada no callback do fetch (.then), nunca durante render — Date.now() seguro aqui
+function computeExpiry(expiresAt: string | null): ExpiryInfo | null {
   if (!expiresAt) return null;
   const diff = new Date(expiresAt).getTime() - Date.now();
-  const dias  = Math.ceil(diff / (1000 * 60 * 60 * 24));
-  const data  = new Date(expiresAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" });
-
-  if (dias <= 0) return <span className="text-xs text-red-400 font-medium">Expirado</span>;
-  if (dias <= 7) return <span className="text-xs text-red-400 font-medium">Expira em {dias}d</span>;
-  return               <span className="text-xs text-emerald-500">Válido até {data}</span>;
+  const dias = Math.ceil(diff / (1000 * 60 * 60 * 24));
+  const data = new Date(expiresAt).toLocaleDateString("pt-BR", {
+    day: "2-digit", month: "short", year: "numeric",
+  });
+  if (dias <= 0) return { texto: "Expirado",           cor: "red"     };
+  if (dias <= 7) return { texto: `Expira em ${dias}d`, cor: "red"     };
+  return               { texto: `Válido até ${data}`,  cor: "emerald" };
 }
 
-const ABAS: { label: string; value: Status; cor: string }[] = [
-  { label: "Pendentes",  value: "PENDENTE",  cor: "amber"  },
-  { label: "Aprovadas",  value: "APROVADA",  cor: "emerald" },
-  { label: "Rejeitadas", value: "REJEITADA", cor: "red"    },
+// Badge de validade — não faz nenhum cálculo, só renderiza o que já foi computado
+function ExpiresAtBadge({ info }: { info: ExpiryInfo | null }) {
+  if (!info) return null;
+  return (
+    <span className={`text-xs font-medium ${
+      info.cor === "red" ? "text-red-400" : "text-emerald-500"
+    }`}>
+      {info.texto}
+    </span>
+  );
+}
+
+const ABAS: { label: string; value: Status }[] = [
+  { label: "Pendentes",  value: "PENDENTE"  },
+  { label: "Aprovadas",  value: "APROVADA"  },
+  { label: "Rejeitadas", value: "REJEITADA" },
 ];
 
+type RawSolicitacao = Omit<Solicitacao, "_expiry">;
+
 export default function SolicitacoesPage() {
-  const [aba, setAba] = useState<Status>("PENDENTE");
-  const [lista, setLista] = useState<Solicitacao[]>([]);
-  const [carregando, setCarregando] = useState(true);
+  const [aba,         setAba]         = useState<Status>("PENDENTE");
+  const [lista,       setLista]       = useState<Solicitacao[]>([]);
   const [processando, setProcessando] = useState<string | null>(null);
-  const [contagens, setContagens] = useState<Record<Status, number>>({
+  const [contagens,   setContagens]   = useState<Record<Status, number>>({
     PENDENTE: 0, APROVADA: 0, REJEITADA: 0,
   });
 
-  const carregar = useCallback(async (status: Status) => {
-    setCarregando(true);
-    const res = await fetch(`/api/admin/solicitacoes?status=${status}`);
-    const data = await res.json();
-    setLista(data.solicitacoes ?? []);
-    setCarregando(false);
-  }, []);
+  // Carregando derivado: não foi feito fetch para esta aba ainda?
+  // (evita setar loading state sincronamente dentro do useEffect)
+  const [abaCarregada, setAbaCarregada] = useState<Status | null>(null);
+  const carregando = abaCarregada !== aba;
 
-  const carregarContagens = useCallback(async () => {
-    const [p, a, r] = await Promise.all([
-      fetch("/api/admin/solicitacoes?status=PENDENTE").then(r => r.json()),
-      fetch("/api/admin/solicitacoes?status=APROVADA").then(r => r.json()),
-      fetch("/api/admin/solicitacoes?status=REJEITADA").then(r => r.json()),
-    ]);
-    setContagens({
-      PENDENTE:  (p.solicitacoes ?? []).length,
-      APROVADA:  (a.solicitacoes ?? []).length,
-      REJEITADA: (r.solicitacoes ?? []).length,
-    });
-  }, []);
-
+  // ── Carrega lista da aba atual ───────────────────────────────────────────
+  // Usa .then() em vez de async/await para que setState só seja chamado
+  // assincronamente (dentro do .then), nunca de forma síncrona no corpo do effect.
   useEffect(() => {
-    carregar(aba);
-  }, [aba, carregar]);
+    const ctrl = new AbortController();
 
+    fetch(`/api/admin/solicitacoes?status=${aba}`, { signal: ctrl.signal })
+      .then((r) => r.json())
+      .then((data) => {
+        const items = (data.solicitacoes ?? []) as RawSolicitacao[];
+        setLista(
+          items.map((s) => ({ ...s, _expiry: computeExpiry(s.expiresAt) })),
+        );
+        setAbaCarregada(aba);
+      })
+      .catch(() => { /* abortado ou erro de rede — ignora */ });
+
+    return () => ctrl.abort();
+  }, [aba]);
+
+  // ── Carrega contagens de todas as abas ───────────────────────────────────
   useEffect(() => {
-    carregarContagens();
-  }, [carregarContagens]);
+    const ctrl = new AbortController();
 
-  async function agir(id: string, acao: "aprovar" | "rejeitar") {
+    Promise.all([
+      fetch("/api/admin/solicitacoes?status=PENDENTE",  { signal: ctrl.signal }).then((r) => r.json()),
+      fetch("/api/admin/solicitacoes?status=APROVADA",  { signal: ctrl.signal }).then((r) => r.json()),
+      fetch("/api/admin/solicitacoes?status=REJEITADA", { signal: ctrl.signal }).then((r) => r.json()),
+    ]).then(([p, a, r]) => {
+      setContagens({
+        PENDENTE:  (p.solicitacoes ?? []).length,
+        APROVADA:  (a.solicitacoes ?? []).length,
+        REJEITADA: (r.solicitacoes ?? []).length,
+      });
+    }).catch(() => {});
+
+    return () => ctrl.abort();
+  }, []); // roda uma vez ao montar
+
+  // ── Aprovar / rejeitar / renovar ─────────────────────────────────────────
+  async function agir(id: string, acao: "aprovar" | "rejeitar" | "renovar") {
     setProcessando(id);
     await fetch(`/api/admin/solicitacoes/${id}`, {
-      method: "PUT",
+      method:  "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ acao }),
+      body:    JSON.stringify({ acao }),
     });
     setProcessando(null);
-    await Promise.all([carregar(aba), carregarContagens()]);
+
+    // Recarrega lista + contagens de forma assíncrona
+    const [res, resP, resA, resR] = await Promise.all([
+      fetch(`/api/admin/solicitacoes?status=${aba}`).then((r) => r.json()),
+      fetch("/api/admin/solicitacoes?status=PENDENTE").then((r)  => r.json()),
+      fetch("/api/admin/solicitacoes?status=APROVADA").then((r)  => r.json()),
+      fetch("/api/admin/solicitacoes?status=REJEITADA").then((r) => r.json()),
+    ]);
+
+    const items = (res.solicitacoes ?? []) as RawSolicitacao[];
+    setLista(items.map((s) => ({ ...s, _expiry: computeExpiry(s.expiresAt) })));
+    setContagens({
+      PENDENTE:  (resP.solicitacoes ?? []).length,
+      APROVADA:  (resA.solicitacoes ?? []).length,
+      REJEITADA: (resR.solicitacoes ?? []).length,
+    });
   }
 
+  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="p-6">
       <div>
@@ -114,7 +168,7 @@ export default function SolicitacoesPage() {
           {ABAS.map((a) => (
             <button
               key={a.value}
-              onClick={() => setAba(a.value)}
+              onClick={() => { setAbaCarregada(null); setAba(a.value); }}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 aba === a.value
                   ? a.value === "PENDENTE"
@@ -148,7 +202,7 @@ export default function SolicitacoesPage() {
           ) : lista.length === 0 ? (
             <div className="p-16 text-center">
               <div className="text-4xl mb-3">
-                {aba === "PENDENTE" ? "✅" : aba === "APROVADA" ? "📋" : "📋"}
+                {aba === "PENDENTE" ? "✅" : "📋"}
               </div>
               <p className="text-gray-400 font-medium">
                 {aba === "PENDENTE"
@@ -170,18 +224,16 @@ export default function SolicitacoesPage() {
                   key={s.id}
                   className="flex items-center gap-4 px-6 py-4 hover:bg-gray-800/30 transition"
                 >
-                  {/* Matéria */}
+                  {/* Ícone matéria */}
                   <div className="w-10 h-10 rounded-xl bg-gray-800 border border-gray-700 flex items-center justify-center text-xl shrink-0">
                     {s.materia.icone ?? "📖"}
                   </div>
 
                   {/* Info */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-white font-medium text-sm truncate">
-                        {s.materia.nome}
-                      </p>
-                    </div>
+                    <p className="text-white font-medium text-sm truncate">
+                      {s.materia.nome}
+                    </p>
                     <div className="flex items-center gap-1.5 mt-0.5">
                       <div className="w-4 h-4 rounded-full bg-gray-700 flex items-center justify-center text-[10px] font-bold text-gray-400 shrink-0">
                         {s.user.nome.charAt(0).toUpperCase()}
@@ -193,13 +245,13 @@ export default function SolicitacoesPage() {
                     </div>
                   </div>
 
-                  {/* Data + validade */}
+                  {/* Data + validade (pré-computada, sem Date.now() no render) */}
                   <div className="hidden sm:block text-right shrink-0">
                     <p className="text-gray-500 text-xs">
                       {new Date(s.createdAt).toLocaleDateString("pt-BR")}
                     </p>
-                    {s.status === "APROVADA" && s.expiresAt ? (
-                      <ExpiresAtBadge expiresAt={s.expiresAt} />
+                    {s.status === "APROVADA" ? (
+                      <ExpiresAtBadge info={s._expiry} />
                     ) : (
                       <p className="text-gray-600 text-[11px]">
                         {new Date(s.createdAt).toLocaleTimeString("pt-BR", {
@@ -218,9 +270,9 @@ export default function SolicitacoesPage() {
                           disabled={processando === s.id}
                           className="flex items-center gap-1.5 bg-emerald-700/30 hover:bg-emerald-700/60 border border-emerald-600/40 text-emerald-400 hover:text-emerald-300 text-xs font-medium px-3 py-1.5 rounded-lg transition disabled:opacity-40"
                         >
-                          {processando === s.id ? (
-                            <span className="w-3 h-3 border border-emerald-400 border-t-transparent rounded-full animate-spin" />
-                          ) : "✓"}
+                          {processando === s.id
+                            ? <span className="w-3 h-3 border border-emerald-400 border-t-transparent rounded-full animate-spin" />
+                            : "✓"}
                           Aprovar
                         </button>
                         <button
@@ -232,16 +284,28 @@ export default function SolicitacoesPage() {
                         </button>
                       </>
                     ) : s.status === "APROVADA" ? (
-                      <span className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Aprovada
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Aprovada
+                        </span>
+                        <button
+                          onClick={() => agir(s.id, "renovar")}
+                          disabled={processando === s.id}
+                          title="Renovar acesso por mais 30 dias"
+                          className="flex items-center gap-1 bg-teal-900/20 hover:bg-teal-900/50 border border-teal-700/30 text-teal-400 hover:text-teal-300 text-xs font-medium px-2.5 py-1.5 rounded-lg transition disabled:opacity-40"
+                        >
+                          {processando === s.id
+                            ? <span className="w-3 h-3 border border-teal-400 border-t-transparent rounded-full animate-spin" />
+                            : "↻"}
+                          +30d
+                        </button>
+                      </div>
                     ) : (
                       <span className="flex items-center gap-1.5 text-xs text-red-400 font-medium">
                         <span className="w-1.5 h-1.5 rounded-full bg-red-400" /> Rejeitada
                       </span>
                     )}
 
-                    {/* Link para perfil do usuário */}
                     <Link
                       href={`/admin/usuarios/${s.user.id}`}
                       className="text-gray-600 hover:text-gray-400 text-xs transition ml-1"

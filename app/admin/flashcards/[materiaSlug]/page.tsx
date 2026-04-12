@@ -16,7 +16,9 @@ type Flashcard = {
 };
 type Topico  = { id: string; titulo: string; slug: string };
 type Bloco   = { id: string; nome: string; topicos: Topico[] };
-type Materia = { id: string; nome: string; slug: string; icone: string | null; blocos: Bloco[] };
+type Materia = { id: string; nome: string; slug: string; icone: string | null; cor: string | null; descricao: string | null; blocos: Bloco[] };
+
+const CORES = ["emerald", "teal", "blue", "violet", "rose", "amber", "cyan"];
 
 export default function AdminFlashcardsMateriaPage() {
   const { materiaSlug } = useParams<{ materiaSlug: string }>();
@@ -28,6 +30,11 @@ export default function AdminFlashcardsMateriaPage() {
   const [salvando, setSalvando]   = useState(false);
   const [erro, setErro]           = useState("");
   const [sucesso, setSucesso]     = useState("");
+
+  // Edição da matéria
+  const [showEditMateria, setShowEditMateria] = useState(false);
+  const [editMateria, setEditMateria]         = useState({ nome: "", slug: "", descricao: "", icone: "", cor: "" });
+  const [salvandoMateria, setSalvandoMateria] = useState(false);
 
   // Seletores cascata
   const [blocoId, setBlocoId]   = useState("");
@@ -77,6 +84,42 @@ export default function AdminFlashcardsMateriaPage() {
   const resetForm = () => {
     setBlocoId(""); setTopicoId("");
     setFrente(""); setVerso(""); setDica(""); setErro("");
+  };
+
+  // ── Editar matéria ─────────────────────────────────────────────
+  const abrirEditMateria = () => {
+    if (!materia) return;
+    setEditMateria({
+      nome:      materia.nome,
+      slug:      materia.slug,
+      descricao: materia.descricao ?? "",
+      icone:     materia.icone ?? "",
+      cor:       materia.cor ?? "emerald",
+    });
+    setShowEditMateria(true);
+    setErro("");
+  };
+
+  const salvarMateria = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!materia) return;
+    setErro(""); setSalvandoMateria(true);
+    try {
+      const res = await fetch(`/api/materias/${materia.slug}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editMateria),
+      });
+      if (!res.ok) { setErro((await res.json()).error ?? "Erro ao salvar."); return; }
+      const updated = await res.json();
+      setMateria((prev) => prev ? { ...prev, ...updated } : prev);
+      setShowEditMateria(false);
+      setSucesso("Matéria atualizada!"); setTimeout(() => setSucesso(""), 3000);
+      if (updated.slug && updated.slug !== materia.slug) {
+        window.location.href = `/admin/flashcards/${updated.slug}`;
+      }
+    } catch { setErro("Erro ao salvar."); }
+    finally { setSalvandoMateria(false); }
   };
 
   // ── Submit ────────────────────────────────────────────────────
@@ -133,19 +176,17 @@ export default function AdminFlashcardsMateriaPage() {
   // ── Render ────────────────────────────────────────────────────
   return (
     <div className="text-white p-8">
-      <div className="max-w-5xl">
+      <div>
 
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-start justify-between mb-4">
           <div>
             <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
               <Link href="/admin" className="hover:text-gray-300">Admin</Link>
               <span>›</span>
-              <Link href="/admin/materias" className="hover:text-gray-300">Matérias</Link>
+              <Link href="/admin/flashcards" className="hover:text-gray-300">Flashcards</Link>
               <span>›</span>
-              <span>{materia?.nome ?? materiaSlug}</span>
-              <span>›</span>
-              <span>Flashcards</span>
+              <span className="text-gray-400">{materia?.nome ?? materiaSlug}</span>
             </div>
             <h1 className="text-2xl font-black text-white flex items-center gap-3">
               {materia?.icone && <span>{materia.icone}</span>}
@@ -161,17 +202,120 @@ export default function AdminFlashcardsMateriaPage() {
               </p>
             )}
           </div>
-          <button
-            onClick={() => { setShowForm((v) => !v); setErro(""); }}
-            className={`flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-xl transition-all ${
-              showForm
-                ? "bg-gray-800 text-gray-400 hover:bg-gray-700"
-                : "bg-emerald-600 hover:bg-emerald-500 text-white"
-            }`}
-          >
-            {showForm ? "✕ Cancelar" : "+ Novo flashcard"}
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => showEditMateria ? setShowEditMateria(false) : abrirEditMateria()}
+              className={`text-sm font-medium px-4 py-2 rounded-xl transition-all ${
+                showEditMateria
+                  ? "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                  : "bg-amber-600/20 border border-amber-500/30 text-amber-300 hover:bg-amber-600/30"
+              }`}
+            >
+              {showEditMateria ? "✕ Fechar edição" : "✏️ Editar matéria"}
+            </button>
+            <button
+              onClick={() => { setShowForm((v) => !v); setErro(""); }}
+              className={`flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-xl transition-all ${
+                showForm
+                  ? "bg-gray-800 text-gray-400 hover:bg-gray-700"
+                  : "bg-emerald-600 hover:bg-emerald-500 text-white"
+              }`}
+            >
+              {showForm ? "✕ Cancelar" : "+ Novo flashcard"}
+            </button>
+          </div>
         </div>
+
+        {/* ── Card de edição da matéria ── */}
+        {showEditMateria && (
+          <form onSubmit={salvarMateria} className="mb-6">
+            <div className="bg-gray-900 border border-amber-500/20 rounded-2xl p-5 space-y-4">
+              <h2 className="text-sm font-bold text-white flex items-center gap-2">
+                ✏️ Editar matéria: <span className="text-amber-300">{materia?.nome}</span>
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Nome *</label>
+                  <input
+                    type="text"
+                    value={editMateria.nome}
+                    onChange={(e) => setEditMateria((f) => ({ ...f, nome: e.target.value }))}
+                    required
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Slug *</label>
+                  <input
+                    type="text"
+                    value={editMateria.slug}
+                    onChange={(e) => setEditMateria((f) => ({ ...f, slug: e.target.value }))}
+                    required
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm font-mono focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Ícone (emoji)</label>
+                  <input
+                    type="text"
+                    value={editMateria.icone}
+                    onChange={(e) => setEditMateria((f) => ({ ...f, icone: e.target.value }))}
+                    placeholder="🏦"
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs text-gray-500 mb-1">Descrição</label>
+                  <textarea
+                    value={editMateria.descricao}
+                    onChange={(e) => setEditMateria((f) => ({ ...f, descricao: e.target.value }))}
+                    rows={2}
+                    className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:border-amber-500 resize-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-gray-500 mb-2">Cor</label>
+                  <div className="flex gap-2 flex-wrap">
+                    {CORES.map((c) => (
+                      <button
+                        key={c}
+                        type="button"
+                        onClick={() => setEditMateria((f) => ({ ...f, cor: c }))}
+                        className={`w-7 h-7 rounded-full border-2 transition-all ${
+                          editMateria.cor === c ? "border-white scale-110" : "border-transparent opacity-60 hover:opacity-100"
+                        }`}
+                        style={{ backgroundColor: `var(--color-${c}-500, #10b981)` }}
+                        title={c}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+              {erro && <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">⚠ {erro}</p>}
+              <div className="flex gap-3 pt-1">
+                <button
+                  type="submit"
+                  disabled={salvandoMateria}
+                  className="bg-amber-600 hover:bg-amber-500 text-white text-sm font-medium px-5 py-2 rounded-xl transition-colors disabled:opacity-50"
+                >
+                  {salvandoMateria ? "Salvando…" : "Salvar alterações"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowEditMateria(false)}
+                  className="bg-gray-800 hover:bg-gray-700 text-gray-400 text-sm px-4 py-2 rounded-xl transition-colors"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          </form>
+        )}
+
+        {/* Divider */}
+        <div className="border-t border-gray-800 mb-8" />
 
         {/* Feedback */}
         {sucesso && (

@@ -14,15 +14,40 @@ export async function PUT(req: NextRequest, { params }: Params) {
   }
 
   const { id } = await params;
-  const { acao } = await req.json() as { acao: "aprovar" | "rejeitar" };
+  const { acao } = await req.json() as { acao: "aprovar" | "rejeitar" | "renovar" };
 
-  if (!["aprovar", "rejeitar"].includes(acao)) {
+  if (!["aprovar", "rejeitar", "renovar"].includes(acao)) {
     return NextResponse.json({ error: "Ação inválida." }, { status: 400 });
   }
 
   const solicitacao = await prisma.solicitacaoMateria.findUnique({ where: { id } });
   if (!solicitacao) {
     return NextResponse.json({ error: "Solicitação não encontrada." }, { status: 404 });
+  }
+
+  // Renovar: estende expiresAt em +30 dias a partir de AGORA (mesmo que já expirado)
+  if (acao === "renovar") {
+    const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    await prisma.userMateria.upsert({
+      where: {
+        userId_materiaId: {
+          userId: solicitacao.userId,
+          materiaId: solicitacao.materiaId,
+        },
+      },
+      update: { expiresAt },
+      create: {
+        userId: solicitacao.userId,
+        materiaId: solicitacao.materiaId,
+        expiresAt,
+      },
+    });
+    // Garante que a solicitação fica como APROVADA
+    await prisma.solicitacaoMateria.update({
+      where: { id },
+      data: { status: "APROVADA" },
+    });
+    return NextResponse.json({ ok: true });
   }
 
   if (acao === "aprovar") {
