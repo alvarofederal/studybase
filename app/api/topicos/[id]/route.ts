@@ -16,6 +16,18 @@ export async function GET(_req: Request, { params }: Params) {
   }
 }
 
+// DELETE /api/topicos/[id]
+export async function DELETE(_req: Request, { params }: Params) {
+  try {
+    const { id } = await params;
+    await prisma.topico.delete({ where: { id } });
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    console.error("[DELETE /api/topicos/[id]]", error);
+    return NextResponse.json({ error: "Erro ao deletar tópico" }, { status: 500 });
+  }
+}
+
 // PATCH /api/topicos/[id] — atualiza título, slug, resumo e/ou conteúdo
 export async function PATCH(request: Request, { params }: Params) {
   try {

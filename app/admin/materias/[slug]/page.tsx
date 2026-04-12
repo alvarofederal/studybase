@@ -75,6 +75,15 @@ export default function MateriaDetailPage() {
   const [editTopico, setEditTopico]             = useState({ titulo: "", slug: "", resumo: "", conteudo: "" });
   const [salvandoTopico, setSalvandoTopico]     = useState(false);
 
+  // Edição/exclusão de bloco
+  const [editingBlocoId, setEditingBlocoId]     = useState<string | null>(null);
+  const [editBloco, setEditBloco]               = useState({ nome: "", slug: "", descricao: "" });
+  const [salvandoBloco, setSalvandoBloco]       = useState(false);
+  const [deletandoBlocoId, setDeletandoBlocoId] = useState<string | null>(null);
+
+  // Exclusão de tópico
+  const [deletandoTopicoId, setDeletandoTopicoId] = useState<string | null>(null);
+
   // Feedback
   const [erro, setErro]       = useState("");
   const [sucesso, setSucesso] = useState("");
@@ -177,6 +186,54 @@ export default function MateriaDetailPage() {
       flash("Tópico atualizado!");
     } catch { setErro("Erro ao salvar tópico."); }
     finally { setSalvandoTopico(false); }
+  };
+
+  // ── Editar bloco ──────────────────────────────────────────────
+  const abrirEditBloco = (b: Bloco) => {
+    setEditBloco({ nome: b.nome, slug: b.slug, descricao: b.descricao ?? "" });
+    setEditingBlocoId(b.id);
+  };
+
+  const salvarBloco = async (e: React.FormEvent, blocoId: string) => {
+    e.preventDefault();
+    setSalvandoBloco(true); setErro("");
+    try {
+      const res = await fetch(`/api/blocos/${blocoId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editBloco),
+      });
+      if (!res.ok) { setErro((await res.json()).error ?? "Erro"); return; }
+      const updated = await res.json();
+      setBlocos((prev) => prev.map((b) => b.id === blocoId ? { ...b, ...updated } : b));
+      if (blocoSel?.id === blocoId) setBlocoSel((prev) => prev ? { ...prev, ...updated } : prev);
+      setEditingBlocoId(null);
+      flash("Bloco atualizado!");
+    } catch { setErro("Erro ao salvar bloco."); }
+    finally { setSalvandoBloco(false); }
+  };
+
+  const deletarBloco = async (blocoId: string) => {
+    if (!confirm("Excluir este bloco? Isso removerá todos os tópicos, questões e flashcards vinculados.")) return;
+    setDeletandoBlocoId(blocoId);
+    try {
+      await fetch(`/api/blocos/${blocoId}`, { method: "DELETE" });
+      setBlocos((prev) => prev.filter((b) => b.id !== blocoId));
+      if (blocoSel?.id === blocoId) { setBlocoSel(null); setTopicos([]); setTopicoSel(null); }
+      flash("Bloco excluído!");
+    } finally { setDeletandoBlocoId(null); }
+  };
+
+  // ── Excluir tópico ────────────────────────────────────────────
+  const deletarTopico = async (topicoId: string) => {
+    if (!confirm("Excluir este tópico? Isso removerá todas as questões e flashcards vinculados.")) return;
+    setDeletandoTopicoId(topicoId);
+    try {
+      await fetch(`/api/topicos/${topicoId}`, { method: "DELETE" });
+      setTopicos((prev) => prev.filter((t) => t.id !== topicoId));
+      if (topicoSel?.id === topicoId) { setTopicoSel(null); setShowEditTopico(false); }
+      flash("Tópico excluído!");
+    } finally { setDeletandoTopicoId(null); }
   };
 
   // ── Abrir edição da matéria ────────────────────────────────
@@ -528,25 +585,44 @@ export default function MateriaDetailPage() {
               </div>
             ) : (
               blocos.map((b, idx) => (
-                <button
-                  key={b.id}
-                  onClick={() => selecionarBloco(b)}
-                  className={`w-full text-left px-4 py-3 transition-colors border-l-2 ${
-                    blocoSel?.id === b.id
-                      ? "bg-emerald-500/10 border-emerald-500 text-white"
-                      : "border-transparent hover:bg-gray-800/50 text-gray-300 hover:text-white"
-                  }`}
-                >
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono text-gray-600 shrink-0">
-                      {String(idx + 1).padStart(2, "0")}
-                    </span>
-                    <span className="text-sm font-medium leading-tight">{b.nome}</span>
-                  </div>
-                  {b.descricao && (
-                    <p className="text-xs text-gray-600 mt-0.5 ml-6 truncate">{b.descricao}</p>
+                <div key={b.id} className={`border-l-2 transition-colors ${blocoSel?.id === b.id ? "border-emerald-500 bg-emerald-500/10" : "border-transparent"}`}>
+                  {editingBlocoId === b.id ? (
+                    /* ── Form edição de bloco ── */
+                    <form onSubmit={(e) => salvarBloco(e, b.id)} className="px-3 py-2 space-y-1.5 bg-gray-800/40">
+                      <input type="text" value={editBloco.nome} onChange={(e) => setEditBloco((f) => ({ ...f, nome: e.target.value }))} required placeholder="Nome *"
+                        className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-emerald-500" />
+                      <input type="text" value={editBloco.slug} onChange={(e) => setEditBloco((f) => ({ ...f, slug: e.target.value }))} required placeholder="Slug *"
+                        className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-gray-300 font-mono focus:outline-none focus:border-emerald-500" />
+                      <input type="text" value={editBloco.descricao} onChange={(e) => setEditBloco((f) => ({ ...f, descricao: e.target.value }))} placeholder="Descrição"
+                        className="w-full bg-gray-800 border border-gray-700 rounded px-2 py-1 text-xs text-white focus:outline-none focus:border-emerald-500" />
+                      <div className="flex gap-1">
+                        <button type="submit" disabled={salvandoBloco} className="flex-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs py-1 rounded transition-colors disabled:opacity-50">
+                          {salvandoBloco ? "…" : "Salvar"}
+                        </button>
+                        <button type="button" onClick={() => setEditingBlocoId(null)} className="flex-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs py-1 rounded transition-colors">
+                          Cancelar
+                        </button>
+                      </div>
+                    </form>
+                  ) : (
+                    /* ── Linha normal ── */
+                    <div className={`flex items-center gap-1 pr-2 group ${blocoSel?.id === b.id ? "text-white" : "text-gray-300 hover:text-white hover:bg-gray-800/50"}`}>
+                      <button onClick={() => selecionarBloco(b)} className="flex-1 text-left px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-[10px] font-mono text-gray-600 shrink-0">{String(idx + 1).padStart(2, "0")}</span>
+                          <span className="text-sm font-medium leading-tight">{b.nome}</span>
+                        </div>
+                        {b.descricao && <p className="text-xs text-gray-600 mt-0.5 ml-6 truncate">{b.descricao}</p>}
+                      </button>
+                      <div className="hidden group-hover:flex gap-0.5 shrink-0">
+                        <button onClick={() => abrirEditBloco(b)} className="text-gray-600 hover:text-white bg-gray-800 hover:bg-gray-700 p-1 rounded text-xs transition-colors" title="Editar">✏️</button>
+                        <button onClick={() => deletarBloco(b.id)} disabled={deletandoBlocoId === b.id} className="text-gray-600 hover:text-red-400 hover:bg-red-500/10 bg-gray-800 p-1 rounded text-xs transition-colors disabled:opacity-40" title="Excluir">
+                          {deletandoBlocoId === b.id ? "…" : "🗑"}
+                        </button>
+                      </div>
+                    </div>
                   )}
-                </button>
+                </div>
               ))
             )}
           </div>
@@ -634,23 +710,25 @@ export default function MateriaDetailPage() {
                   </div>
                 ) : (
                   topicos.map((t, idx) => (
-                    <button
-                      key={t.id}
-                      onClick={() => selecionarTopico(t)}
-                      className={`w-full text-left px-4 py-3 transition-colors border-l-2 ${
-                        topicoSel?.id === t.id
-                          ? "bg-emerald-500/10 border-emerald-500 text-white"
-                          : "border-transparent hover:bg-gray-800/50 text-gray-300 hover:text-white"
-                      }`}
-                    >
-                      <div className="flex items-start gap-2">
-                        <span className="text-[10px] font-mono text-gray-600 shrink-0 mt-0.5">{idx + 1}.</span>
-                        <span className="text-sm font-medium leading-tight">{t.titulo}</span>
+                    <div key={t.id} className={`border-l-2 transition-colors ${topicoSel?.id === t.id ? "border-emerald-500 bg-emerald-500/10" : "border-transparent"}`}>
+                      <div className={`flex items-center gap-1 pr-2 group ${topicoSel?.id === t.id ? "text-white" : "text-gray-300 hover:text-white hover:bg-gray-800/50"}`}>
+                        <button onClick={() => selecionarTopico(t)} className="flex-1 text-left px-4 py-3">
+                          <div className="flex items-start gap-2">
+                            <span className="text-[10px] font-mono text-gray-600 shrink-0 mt-0.5">{idx + 1}.</span>
+                            <span className="text-sm font-medium leading-tight">{t.titulo}</span>
+                          </div>
+                          {t.resumo && <p className="text-xs text-gray-600 mt-0.5 ml-5 line-clamp-2">{t.resumo}</p>}
+                        </button>
+                        <button
+                          onClick={() => deletarTopico(t.id)}
+                          disabled={deletandoTopicoId === t.id}
+                          className="hidden group-hover:flex text-gray-600 hover:text-red-400 hover:bg-red-500/10 bg-gray-800 p-1 rounded text-xs transition-colors disabled:opacity-40 shrink-0"
+                          title="Excluir tópico"
+                        >
+                          {deletandoTopicoId === t.id ? "…" : "🗑"}
+                        </button>
                       </div>
-                      {t.resumo && (
-                        <p className="text-xs text-gray-600 mt-0.5 ml-5 line-clamp-2">{t.resumo}</p>
-                      )}
-                    </button>
+                    </div>
                   ))
                 )}
               </div>

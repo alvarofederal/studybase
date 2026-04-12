@@ -32,6 +32,12 @@ export default function AdminQuizMateriaPage() {
   const [editMateria, setEditMateria]           = useState({ nome: "", slug: "", descricao: "", icone: "", cor: "" });
   const [salvandoMateria, setSalvandoMateria]   = useState(false);
 
+  // Edição/exclusão de quiz
+  const [editingQuizId, setEditingQuizId]       = useState<string | null>(null);
+  const [editQuiz, setEditQuiz]                 = useState({ pergunta: "", explicacao: "", opcoes: [{ texto: "", correta: false }, { texto: "", correta: false }, { texto: "", correta: false }, { texto: "", correta: false }] });
+  const [salvandoQuiz, setSalvandoQuiz]         = useState(false);
+  const [deletandoQuizId, setDeletandoQuizId]   = useState<string | null>(null);
+
   // Seletores cascata (bloco → tópico)
   const [blocoId, setBlocoId]   = useState("");
   const [topicoId, setTopicoId] = useState("");
@@ -120,6 +126,45 @@ export default function AdminQuizMateriaPage() {
       }
     } catch { setErro("Erro ao salvar."); }
     finally { setSalvandoMateria(false); }
+  };
+
+  // ── Editar quiz ───────────────────────────────────────────────
+  const abrirEditQuiz = (quiz: Quiz) => {
+    const ops = [...quiz.opcoes].sort((a, b) => a.ordem - b.ordem);
+    while (ops.length < 4) ops.push({ id: "", texto: "", correta: false, ordem: ops.length });
+    setEditQuiz({ pergunta: quiz.pergunta, explicacao: quiz.explicacao ?? "", opcoes: ops.map((o) => ({ texto: o.texto, correta: o.correta })) });
+    setEditingQuizId(quiz.id);
+  };
+
+  const salvarQuiz = async (e: React.FormEvent, quizId: string) => {
+    e.preventDefault();
+    const validas = editQuiz.opcoes.filter((o) => o.texto.trim());
+    if (validas.length < 2) return setErro("Preencha pelo menos 2 opções.");
+    if (!validas.some((o) => o.correta)) return setErro("Marque a resposta correta.");
+    setSalvandoQuiz(true); setErro("");
+    try {
+      const res = await fetch(`/api/quiz/${quizId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pergunta: editQuiz.pergunta, explicacao: editQuiz.explicacao || null, opcoes: validas.map((o, i) => ({ texto: o.texto.trim(), correta: o.correta, ordem: i })) }),
+      });
+      if (!res.ok) { setErro((await res.json()).error ?? "Erro"); return; }
+      const updated = await res.json();
+      setQuizzes((prev) => prev.map((q) => q.id === quizId ? { ...q, ...updated } : q));
+      setEditingQuizId(null);
+      setSucesso("Questão atualizada!"); setTimeout(() => setSucesso(""), 3000);
+    } catch { setErro("Erro ao salvar."); }
+    finally { setSalvandoQuiz(false); }
+  };
+
+  const deletarQuiz = async (quizId: string) => {
+    if (!confirm("Excluir esta questão? Essa ação não pode ser desfeita.")) return;
+    setDeletandoQuizId(quizId);
+    try {
+      await fetch(`/api/quiz/${quizId}`, { method: "DELETE" });
+      setQuizzes((prev) => prev.filter((q) => q.id !== quizId));
+      setSucesso("Questão excluída!"); setTimeout(() => setSucesso(""), 3000);
+    } finally { setDeletandoQuizId(null); }
   };
 
   // ── Submit ────────────────────────────────────────────────────
@@ -482,29 +527,91 @@ export default function AdminQuizMateriaPage() {
 
                       <div className="space-y-2">
                         {qs.map((quiz, qi) => (
-                          <div key={quiz.id} className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-                            <p className="text-sm font-medium text-white leading-relaxed mb-4">
-                              <span className="text-emerald-400 mr-2 text-xs font-mono">{qi + 1}.</span>
-                              {quiz.pergunta}
-                            </p>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                              {quiz.opcoes.map((o) => (
-                                <div key={o.id}
-                                  className={`px-3 py-2 rounded-lg text-xs border ${
-                                    o.correta
-                                      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300"
-                                      : "border-gray-800 text-gray-500"
-                                  }`}
-                                >
-                                  {o.correta && <span className="mr-1.5">✓</span>}
-                                  {o.texto}
+                          <div key={quiz.id} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                            {editingQuizId === quiz.id ? (
+                              /* ── Formulário de edição inline ── */
+                              <form onSubmit={(e) => salvarQuiz(e, quiz.id)} className="p-4 space-y-3">
+                                <div>
+                                  <label className="block text-xs text-gray-500 mb-1">Pergunta *</label>
+                                  <textarea
+                                    value={editQuiz.pergunta}
+                                    onChange={(e) => setEditQuiz((f) => ({ ...f, pergunta: e.target.value }))}
+                                    required rows={2}
+                                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 resize-none"
+                                  />
                                 </div>
-                              ))}
-                            </div>
-                            {quiz.explicacao && (
-                              <p className="text-xs text-gray-500 mt-3 italic border-t border-gray-800 pt-3">
-                                💡 {quiz.explicacao}
-                              </p>
+                                <div>
+                                  <label className="block text-xs text-gray-500 mb-1">Opções — clique no círculo para marcar a correta</label>
+                                  <div className="space-y-1.5">
+                                    {editQuiz.opcoes.map((op, i) => (
+                                      <div key={i} className="flex items-center gap-2">
+                                        <button type="button"
+                                          onClick={() => setEditQuiz((f) => ({ ...f, opcoes: f.opcoes.map((o, j) => ({ ...o, correta: j === i })) }))}
+                                          className={`shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center text-[10px] font-bold transition-all ${op.correta ? "border-emerald-500 bg-emerald-500 text-white" : "border-gray-600 text-gray-500 hover:border-emerald-500/60"}`}
+                                        >{LETRAS[i]}</button>
+                                        <input type="text" value={op.texto}
+                                          onChange={(e) => setEditQuiz((f) => ({ ...f, opcoes: f.opcoes.map((o, j) => j === i ? { ...o, texto: e.target.value } : o) }))}
+                                          placeholder={`Opção ${LETRAS[i]}`}
+                                          className={`flex-1 bg-gray-800 border rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none transition-colors ${op.correta ? "border-emerald-500/50" : "border-gray-700 focus:border-gray-500"}`}
+                                        />
+                                        {op.correta && <span className="text-xs text-emerald-400 shrink-0">✓</span>}
+                                      </div>
+                                    ))}
+                                  </div>
+                                </div>
+                                <div>
+                                  <label className="block text-xs text-gray-500 mb-1">Explicação (opcional)</label>
+                                  <textarea
+                                    value={editQuiz.explicacao}
+                                    onChange={(e) => setEditQuiz((f) => ({ ...f, explicacao: e.target.value }))}
+                                    rows={2}
+                                    className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 resize-none"
+                                  />
+                                </div>
+                                <div className="flex gap-2">
+                                  <button type="submit" disabled={salvandoQuiz}
+                                    className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium px-4 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                                    {salvandoQuiz ? "Salvando…" : "Salvar"}
+                                  </button>
+                                  <button type="button" onClick={() => setEditingQuizId(null)}
+                                    className="bg-gray-800 hover:bg-gray-700 text-gray-400 text-xs px-4 py-1.5 rounded-lg transition-colors">
+                                    Cancelar
+                                  </button>
+                                </div>
+                              </form>
+                            ) : (
+                              /* ── Visualização normal ── */
+                              <>
+                                <div className="flex items-start gap-3 px-4 pt-4 pb-2">
+                                  <span className="text-xs font-mono text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded shrink-0 mt-0.5">{qi + 1}</span>
+                                  <p className="text-sm font-medium text-white leading-relaxed flex-1">{quiz.pergunta}</p>
+                                  <div className="flex gap-1 shrink-0">
+                                    <button onClick={() => abrirEditQuiz(quiz)}
+                                      className="text-xs text-gray-500 hover:text-white bg-gray-800 hover:bg-gray-700 px-2 py-1 rounded-lg transition-colors">
+                                      ✏️
+                                    </button>
+                                    <button onClick={() => deletarQuiz(quiz.id)} disabled={deletandoQuizId === quiz.id}
+                                      className="text-xs text-gray-500 hover:text-red-400 hover:bg-red-500/10 bg-gray-800 px-2 py-1 rounded-lg transition-colors disabled:opacity-40">
+                                      {deletandoQuizId === quiz.id ? "…" : "🗑"}
+                                    </button>
+                                  </div>
+                                </div>
+                                <div className="px-4 pb-3 grid grid-cols-1 md:grid-cols-2 gap-1.5">
+                                  {quiz.opcoes.sort((a, b) => a.ordem - b.ordem).map((o, oi) => (
+                                    <div key={o.id}
+                                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs border ${o.correta ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" : "border-gray-800 text-gray-500"}`}>
+                                      <span className="font-mono shrink-0 text-gray-600">{LETRAS[oi]}</span>
+                                      <span>{o.texto}</span>
+                                      {o.correta && <span className="ml-auto font-medium">✓</span>}
+                                    </div>
+                                  ))}
+                                </div>
+                                {quiz.explicacao && (
+                                  <div className="px-4 pb-3 text-xs text-amber-400/80 italic border-t border-gray-800 pt-2">
+                                    💡 {quiz.explicacao}
+                                  </div>
+                                )}
+                              </>
                             )}
                           </div>
                         ))}

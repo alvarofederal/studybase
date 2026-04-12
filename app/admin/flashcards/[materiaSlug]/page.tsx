@@ -36,6 +36,12 @@ export default function AdminFlashcardsMateriaPage() {
   const [editMateria, setEditMateria]         = useState({ nome: "", slug: "", descricao: "", icone: "", cor: "" });
   const [salvandoMateria, setSalvandoMateria] = useState(false);
 
+  // Edição/exclusão de flashcard
+  const [editingFcId, setEditingFcId]         = useState<string | null>(null);
+  const [editFc, setEditFc]                   = useState({ frente: "", verso: "", dica: "" });
+  const [salvandoFc, setSalvandoFc]           = useState(false);
+  const [deletandoFcId, setDeletandoFcId]     = useState<string | null>(null);
+
   // Seletores cascata
   const [blocoId, setBlocoId]   = useState("");
   const [topicoId, setTopicoId] = useState("");
@@ -120,6 +126,41 @@ export default function AdminFlashcardsMateriaPage() {
       }
     } catch { setErro("Erro ao salvar."); }
     finally { setSalvandoMateria(false); }
+  };
+
+  // ── Editar flashcard ──────────────────────────────────────────
+  const abrirEditFc = (fc: Flashcard) => {
+    setEditFc({ frente: fc.frente, verso: fc.verso, dica: fc.dica ?? "" });
+    setEditingFcId(fc.id);
+  };
+
+  const salvarFc = async (e: React.FormEvent, fcId: string) => {
+    e.preventDefault();
+    if (!editFc.frente.trim() || !editFc.verso.trim()) return setErro("Frente e verso são obrigatórios.");
+    setSalvandoFc(true); setErro("");
+    try {
+      const res = await fetch(`/api/flashcards/${fcId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ frente: editFc.frente.trim(), verso: editFc.verso.trim(), dica: editFc.dica.trim() || null }),
+      });
+      if (!res.ok) { setErro((await res.json()).error ?? "Erro"); return; }
+      const updated = await res.json();
+      setFlashcards((prev) => prev.map((f) => f.id === fcId ? { ...f, ...updated } : f));
+      setEditingFcId(null);
+      setSucesso("Flashcard atualizado!"); setTimeout(() => setSucesso(""), 3000);
+    } catch { setErro("Erro ao salvar."); }
+    finally { setSalvandoFc(false); }
+  };
+
+  const deletarFc = async (fcId: string) => {
+    if (!confirm("Excluir este flashcard? Essa ação não pode ser desfeita.")) return;
+    setDeletandoFcId(fcId);
+    try {
+      await fetch(`/api/flashcards/${fcId}`, { method: "DELETE" });
+      setFlashcards((prev) => prev.filter((f) => f.id !== fcId));
+      setSucesso("Flashcard excluído!"); setTimeout(() => setSucesso(""), 3000);
+    } finally { setDeletandoFcId(null); }
   };
 
   // ── Submit ────────────────────────────────────────────────────
@@ -473,22 +514,70 @@ export default function AdminFlashcardsMateriaPage() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {fcs.map((fc, idx) => (
                             <div key={fc.id} className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
-                              <div className="bg-gray-800/50 px-3 py-1.5 border-b border-gray-800">
-                                <span className="text-xs text-gray-600 font-mono">#{idx + 1}</span>
-                              </div>
-                              <div className="p-4 space-y-3">
-                                <div>
-                                  <div className="text-xs text-emerald-500 uppercase tracking-wider mb-1 font-medium">Frente</div>
-                                  <p className="text-sm text-white leading-relaxed">{fc.frente}</p>
-                                </div>
-                                <div className="border-t border-gray-800 pt-3">
-                                  <div className="text-xs text-gray-500 uppercase tracking-wider mb-1 font-medium">Verso</div>
-                                  <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{fc.verso}</p>
-                                </div>
-                                {fc.dica && (
-                                  <div className="text-xs text-amber-400 italic">💡 {fc.dica}</div>
-                                )}
-                              </div>
+                              {editingFcId === fc.id ? (
+                                /* ── Edição inline ── */
+                                <form onSubmit={(e) => salvarFc(e, fc.id)} className="p-4 space-y-3">
+                                  <div>
+                                    <label className="block text-xs text-emerald-500 mb-1 font-medium">Frente *</label>
+                                    <textarea value={editFc.frente} onChange={(e) => setEditFc((f) => ({ ...f, frente: e.target.value }))}
+                                      required rows={2}
+                                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 resize-none"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs text-gray-500 mb-1 font-medium">Verso *</label>
+                                    <textarea value={editFc.verso} onChange={(e) => setEditFc((f) => ({ ...f, verso: e.target.value }))}
+                                      required rows={3}
+                                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-emerald-500 resize-none"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-xs text-gray-500 mb-1">Dica</label>
+                                    <input type="text" value={editFc.dica} onChange={(e) => setEditFc((f) => ({ ...f, dica: e.target.value }))}
+                                      placeholder="Opcional…"
+                                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                                    />
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <button type="submit" disabled={salvandoFc}
+                                      className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium px-4 py-1.5 rounded-lg transition-colors disabled:opacity-50">
+                                      {salvandoFc ? "Salvando…" : "Salvar"}
+                                    </button>
+                                    <button type="button" onClick={() => setEditingFcId(null)}
+                                      className="bg-gray-800 hover:bg-gray-700 text-gray-400 text-xs px-4 py-1.5 rounded-lg transition-colors">
+                                      Cancelar
+                                    </button>
+                                  </div>
+                                </form>
+                              ) : (
+                                /* ── Visualização normal ── */
+                                <>
+                                  <div className="flex items-center justify-between bg-gray-800/50 px-3 py-1.5 border-b border-gray-800">
+                                    <span className="text-xs text-gray-600 font-mono">#{idx + 1}</span>
+                                    <div className="flex gap-1">
+                                      <button onClick={() => abrirEditFc(fc)}
+                                        className="text-xs text-gray-500 hover:text-white bg-gray-700/60 hover:bg-gray-700 px-2 py-0.5 rounded transition-colors">
+                                        ✏️
+                                      </button>
+                                      <button onClick={() => deletarFc(fc.id)} disabled={deletandoFcId === fc.id}
+                                        className="text-xs text-gray-500 hover:text-red-400 hover:bg-red-500/10 bg-gray-700/60 px-2 py-0.5 rounded transition-colors disabled:opacity-40">
+                                        {deletandoFcId === fc.id ? "…" : "🗑"}
+                                      </button>
+                                    </div>
+                                  </div>
+                                  <div className="p-4 space-y-3">
+                                    <div>
+                                      <div className="text-xs text-emerald-500 uppercase tracking-wider mb-1 font-medium">Frente</div>
+                                      <p className="text-sm text-white leading-relaxed">{fc.frente}</p>
+                                    </div>
+                                    <div className="border-t border-gray-800 pt-3">
+                                      <div className="text-xs text-gray-500 uppercase tracking-wider mb-1 font-medium">Verso</div>
+                                      <p className="text-sm text-gray-300 leading-relaxed whitespace-pre-line">{fc.verso}</p>
+                                    </div>
+                                    {fc.dica && <div className="text-xs text-amber-400 italic">💡 {fc.dica}</div>}
+                                  </div>
+                                </>
+                              )}
                             </div>
                           ))}
                         </div>
