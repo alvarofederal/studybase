@@ -75,7 +75,7 @@ export async function POST(
   // ── Helper: resolve bloco e tópico pelo nome ──────────────────────────────
   function resolveTopico(blocoNome: string, topicoNome: string) {
     const blocoNomeLower = blocoNome.trim().toLowerCase();
-    const bloco = materia.blocos.find(
+    const bloco = materia!.blocos.find(
       (b) => b.nome.toLowerCase() === blocoNomeLower
     );
     if (!bloco) return { erro: `Bloco não encontrado: "${blocoNome}"` };
@@ -94,7 +94,7 @@ export async function POST(
   let apagadasFlashcards = 0;
 
   if (substituir) {
-    const topicoIds = materia.blocos
+    const topicoIds = materia!.blocos
       .flatMap((b) => b.topicos)
       .map((t) => t.id);
 

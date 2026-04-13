@@ -167,8 +167,10 @@ export default function MateriaDetailPage() {
         fetch(`/api/quiz?topicoId=${t.id}`),
         fetch(`/api/flashcards?topicoId=${t.id}`),
       ]);
-      setQuizzes(await rQ.json());
-      setFlashcards(await rF.json());
+      const dQ = await rQ.json();
+      const dF = await rF.json();
+      setQuizzes(Array.isArray(dQ) ? dQ : []);
+      setFlashcards(Array.isArray(dF) ? dF : []);
     } finally {
       setLoadingConteudo(false);
     }
@@ -346,7 +348,8 @@ export default function MateriaDetailPage() {
       if (!res.ok) { setCsvErro(data.error ?? "Erro ao importar."); return; }
       if (data.erros?.length > 0) setCsvErro(`${data.erros.length} erro(s): ${data.erros[0]}`);
       const rQ = await fetch(`/api/quiz?topicoId=${topicoSel.id}`);
-      setQuizzes(await rQ.json());
+      const dQ2 = await rQ.json();
+      setQuizzes(Array.isArray(dQ2) ? dQ2 : []);
       setShowImport(false);
       setCsvText(""); setCsvPreview([]); setCsvSubstituir(false);
       const msg = data.apagadas > 0
@@ -447,7 +450,8 @@ export default function MateriaDetailPage() {
     });
     if (!res.ok) return setErro((await res.json()).error ?? "Erro");
     const r = await fetch(`/api/quiz?topicoId=${topicoSel.id}`);
-    setQuizzes(await r.json());
+    const dQ3 = await r.json();
+    setQuizzes(Array.isArray(dQ3) ? dQ3 : []);
     setPergunta(""); setExplicacao(""); setQuizDific("MEDIO"); setQuizTags(""); setOpcoes([novaOpcao(), novaOpcao(), novaOpcao(), novaOpcao()]);
     setShowFormQuiz(false);
     flash("Questão criada!");
@@ -465,7 +469,8 @@ export default function MateriaDetailPage() {
     });
     if (!res.ok) return setErro((await res.json()).error ?? "Erro");
     const r = await fetch(`/api/flashcards?topicoId=${topicoSel.id}`);
-    setFlashcards(await r.json());
+    const dF2 = await r.json();
+    setFlashcards(Array.isArray(dF2) ? dF2 : []);
     setFrente(""); setVerso(""); setDica("");
     setShowFormFlash(false);
     flash("Flashcard criado!");
