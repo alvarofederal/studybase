@@ -5,7 +5,7 @@ import prisma from "@/lib/prisma";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { pergunta, explicacao, ordem, topicoId, opcoes } = body;
+    const { pergunta, explicacao, ordem, topicoId, opcoes, dificuldade, tags } = body;
 
     if (!pergunta || !topicoId || !opcoes || opcoes.length < 2) {
       return NextResponse.json(
@@ -22,12 +22,17 @@ export async function POST(request: Request) {
       );
     }
 
+    // Normaliza tags: array ou string → string CSV sem espaços extras
+    const tagsStr = normalizeTags(tags);
+
     const quiz = await prisma.quiz.create({
       data: {
         pergunta,
         explicacao,
         ordem: ordem ?? 0,
         topicoId,
+        dificuldade: dificuldade ?? "MEDIO",
+        tags: tagsStr,
         opcoes: {
           create: opcoes.map(
             (o: { texto: string; correta?: boolean; ordem?: number }, idx: number) => ({
@@ -51,14 +56,18 @@ export async function POST(request: Request) {
   }
 }
 
-// GET /api/quiz?topicoId=xxx
+// GET /api/quiz?topicoId=xxx&dificuldade=FACIL&tag=SFN
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-    const topicoId = searchParams.get("topicoId");
+    const topicoId    = searchParams.get("topicoId");
+    const dificuldade = searchParams.get("dificuldade") as "FACIL" | "MEDIO" | "DIFICIL" | null;
 
     const quizzes = await prisma.quiz.findMany({
-      where: topicoId ? { topicoId } : undefined,
+      where: {
+        ...(topicoId    ? { topicoId }    : {}),
+        ...(dificuldade ? { dificuldade } : {}),
+      },
       orderBy: { ordem: "asc" },
       include: {
         opcoes: { orderBy: { ordem: "asc" } },
@@ -73,4 +82,18 @@ export async function GET(request: Request) {
       { status: 500 }
     );
   }
+}
+
+// ── Utilitários ──────────────────────────────────────────────────
+function normalizeTags(raw: unknown): string | null {
+  if (!raw) return null;
+  if (Array.isArray(raw)) {
+    const str = raw.map((t) => String(t).trim()).filter(Boolean).join(",");
+    return str || null;
+  }
+  if (typeof raw === "string") {
+    const str = raw.split(",").map((t) => t.trim()).filter(Boolean).join(",");
+    return str || null;
+  }
+  return null;
 }

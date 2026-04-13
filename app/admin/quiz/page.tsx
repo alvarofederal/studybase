@@ -26,9 +26,9 @@ export default async function AdminQuizIndexPage() {
           <div className="flex items-center gap-2 text-xs text-gray-500 mb-1">
             <Link href="/admin" className="hover:text-gray-300 transition-colors">Admin</Link>
             <span>›</span>
-            <span className="text-gray-400">Quiz</span>
+            <span className="text-gray-400">Questões</span>
           </div>
-          <h1 className="text-3xl font-black text-white">Quiz</h1>
+          <h1 className="text-3xl font-black text-white">Questões</h1>
           <p className="text-sm text-gray-500 mt-1">
             Selecione uma matéria para gerenciar as questões
           </p>

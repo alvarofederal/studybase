@@ -45,8 +45,8 @@ export async function GET() {
   lines.push("```");
   lines.push("Materia      id, nome, slug, descricao, icone, cor, ativa, ordem");
   lines.push("  └─ Bloco   id, nome, slug, descricao, ordem, materiaId");
-  lines.push("      └─ Topico    id, titulo, slug, conteudo(LongText), resumo, ordem, blocoId");
-  lines.push("          ├─ Quiz         id, pergunta, explicacao, ordem, topicoId");
+  lines.push("      └─ Topico    id, titulo, slug, conteudo(LongText), resumo, ordem, publicado(bool @default true), blocoId");
+  lines.push("          ├─ Quiz         id, pergunta, explicacao, dificuldade(FACIL|MEDIO|DIFICIL), tags(CSV), ordem, topicoId");
   lines.push("          │   └─ OpcaoQuiz  id, texto, correta(bool), ordem, quizId");
   lines.push("          └─ Flashcard    id, frente, verso(LongText), dica, ordem, topicoId");
   lines.push("");
@@ -56,8 +56,9 @@ export async function GET() {
   lines.push("  ├─ UserMateria         id, userId, materiaId, expiresAt(nullable)  @@unique([userId,materiaId])");
   lines.push("  │     └─ expiresAt: null = legado sem expiração; novo padrão = +30 dias desde aprovação");
   lines.push("  ├─ SolicitacaoMateria  id, userId, materiaId, status(PENDENTE|APROVADA|REJEITADA)  @@unique([userId,materiaId])");
-  lines.push("  ├─ RespostaQuiz        id, userId, quizId, opcaoId, correta(bool), topicoId  @@unique([userId,quizId])");
-  lines.push("  └─ RevisaoFlashcard    id, userId, flashcardId, acertou(bool), topicoId     @@unique([userId,flashcardId])");
+  lines.push("  ├─ RespostaQuiz          id, userId, quizId, opcaoId, correta(bool), topicoId  @@unique([userId,quizId])");
+  lines.push("  ├─ HistoricoRespostaQuiz id, userId, quizId, opcaoId, correta(bool), topicoId, tentativa(Int)");
+  lines.push("  └─ RevisaoFlashcard      id, userId, flashcardId, acertou(bool), topicoId     @@unique([userId,flashcardId])");
   lines.push("```");
   lines.push("");
 
@@ -91,9 +92,10 @@ export async function GET() {
   lines.push("# Estudo (usuário autenticado)");
   lines.push("POST   /api/estudo/solicitar        { materiaId } — cria/reativa solicitação");
   lines.push("DELETE /api/estudo/revogar          { materiaId } — remove acesso próprio");
-  lines.push("POST   /api/estudo/responder-quiz   { quizId, opcaoId, correta, topicoId } — upsert");
+  lines.push("POST   /api/estudo/responder-quiz   { quizId, opcaoId, correta, topicoId } — upsert RespostaQuiz + cria HistoricoRespostaQuiz");
+  lines.push("DELETE /api/estudo/responder-quiz   { quizId } — remove RespostaQuiz para nova tentativa (histórico preservado)");
   lines.push("POST   /api/estudo/revisar-flashcard{ flashcardId, acertou, topicoId } — upsert");
-  lines.push("DELETE /api/estudo/reset-topico     { topicoId, tipo:'quiz'|'flashcard' } — apaga para retry");
+  lines.push("DELETE /api/estudo/reset-topico     { topicoId, tipo:'quiz'|'flashcard' } — apaga para retry em lote");
   lines.push("");
   lines.push("# Admin");
   lines.push("GET    /api/admin/solicitacoes?status=PENDENTE|APROVADA|REJEITADA");
@@ -102,12 +104,28 @@ export async function GET() {
   lines.push("GET    /api/admin/usuarios");
   lines.push("GET    /api/admin/usuarios/[id]");
   lines.push("PUT    /api/admin/usuarios/[id]     { ativo, role }");
+  lines.push("GET    /api/admin/stats             dashboard: QuestaoStat[], TopicoStat[], MateriaStat[], StatsOverview");
   lines.push("GET/POST /api/materias              lista/cria matérias");
   lines.push("GET    /api/materias/[slug]         detalhe");
+  lines.push("PATCH  /api/materias/[slug]         atualiza nome, slug, icone, cor, descricao");
+  lines.push("DELETE /api/materias/[slug]         remove matéria (cascade blocos→tópicos→quiz/flashcards)");
   lines.push("GET/POST /api/blocos               lista/cria blocos");
+  lines.push("GET    /api/blocos/[id]             detalhe do bloco");
+  lines.push("PATCH  /api/blocos/[id]             atualiza nome, slug, descricao");
+  lines.push("DELETE /api/blocos/[id]             remove bloco (cascade tópicos→quiz/flashcards)");
   lines.push("GET/POST /api/topicos              lista/cria tópicos");
-  lines.push("GET/POST /api/quiz                 lista/cria questões");
+  lines.push("GET    /api/topicos/[id]            detalhe do tópico");
+  lines.push("PATCH  /api/topicos/[id]            atualiza titulo, slug, resumo, conteudo, publicado");
+  lines.push("POST   /api/admin/quiz/import       importação em lote { topicoId, questoes[{pergunta,opcaoA-D,correta,explicacao?,dificuldade?,tags?}] }");
+  lines.push("DELETE /api/topicos/[id]            remove tópico (cascade quiz/flashcards)");
+  lines.push("GET/POST /api/quiz                 lista/cria questões  (filtros: topicoId, dificuldade)");
+  lines.push("GET    /api/quiz/[id]               detalhe com opcoes incluídas");
+  lines.push("PATCH  /api/quiz/[id]               atualiza pergunta/explicacao/dificuldade/tags; opcoes[] → deleteMany+createMany");
+  lines.push("DELETE /api/quiz/[id]               remove questão (cascade OpcaoQuiz)");
   lines.push("GET/POST /api/flashcards           lista/cria flashcards");
+  lines.push("GET    /api/flashcards/[id]         detalhe do flashcard");
+  lines.push("PATCH  /api/flashcards/[id]         atualiza frente, verso, dica");
+  lines.push("DELETE /api/flashcards/[id]         remove flashcard");
   lines.push("GET    /api/context                este endpoint");
   lines.push("```");
   lines.push("");
@@ -125,12 +143,22 @@ export async function GET() {
   lines.push("/estudo/perfil        perfil: matérias ativas/expiradas + revogar + alterar senha");
   lines.push("/estudo/[slug]        página de estudo (blocos/tópicos/quiz/flashcards)");
   lines.push("");
-  lines.push("/admin                dashboard admin");
-  lines.push("/admin/materias       CRUD matérias/blocos/tópicos/quiz/flashcards");
-  lines.push("/admin/usuarios       lista de usuários");
-  lines.push("/admin/usuarios/[id]  detalhe do usuário");
-  lines.push("/admin/solicitacoes   aprovações de acesso (Pendentes/Aprovadas/Rejeitadas)");
-  lines.push("/admin/context        gera este snapshot");
+  lines.push("/admin                              dashboard admin");
+  lines.push("/admin/materias                     lista de matérias (cards)");
+  lines.push("/admin/materias/[slug]              editor 3 colunas: blocos | tópicos | quiz+flashcards");
+  lines.push("                                    └─ edit inline blocos (PATCH/DELETE)");
+  lines.push("                                    └─ edit inline tópicos (DELETE; edit via coluna 3)");
+  lines.push("                                    └─ edit conteúdo Markdown do tópico selecionado (PATCH)");
+  lines.push("                                    └─ edit matéria (nome/slug/cor/icone/descrição) acima");
+  lines.push("/admin/quiz/[materiaSlug]           CRUD questões por matéria (edit/delete inline)");
+  lines.push("                                    └─ edit matéria acima da lista de questões");
+  lines.push("/admin/flashcards/[materiaSlug]     CRUD flashcards por matéria (edit/delete inline)");
+  lines.push("                                    └─ edit matéria acima da lista de flashcards");
+  lines.push("/admin/usuarios                     lista de usuários");
+  lines.push("/admin/usuarios/[id]                detalhe do usuário");
+  lines.push("/admin/solicitacoes                 aprovações de acesso (Pendentes/Aprovadas/Rejeitadas)");
+  lines.push("/admin/stats                        dashboard de estatísticas de desempenho (questões, flashcards, por matéria)");
+  lines.push("/admin/context                      gera este snapshot");
   lines.push("```");
   lines.push("");
 
@@ -144,6 +172,12 @@ export async function GET() {
   lines.push("- Progresso fire-and-forget: `fetch(...).catch(() => {})` sem bloquear UI");
   lines.push("- Estado global de respostas/revisões: keyed por ID, não reseta ao trocar tópico");
   lines.push("- Prisma db push requer rede para binários — rodar localmente, não no sandbox");
+  lines.push("- Admin layout (`app/admin/layout.tsx`) já inclui AdminSidebar+AdminTopbar — não duplicar por página");
+  lines.push("- CRUD inline admin: estado `editingId` + form toggle por item, PATCH/DELETE fetch → atualiza estado local");
+  lines.push("- Quiz PATCH: `deleteMany({ where: { quizId } })` + `createMany` — abordagem mais simples para reeditar opções");
+  lines.push("- Slug change em matéria → `window.location.href` para novo slug (redirect obrigatório)");
+  lines.push("- Delete com cascade: avisar escopo completo no `confirm()` antes de executar");
+  lines.push("- Tipos de cor no admin: amber para edit-matéria, teal para edit-tópico, gray para blocos");
   lines.push("");
 
   // ── Conteúdo detalhado ──

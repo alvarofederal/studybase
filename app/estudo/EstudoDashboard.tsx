@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import MateriasCliente from "./MateriasCliente";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 /* ── tipos ──────────────────────────────────────────────── */
 interface Topico {
@@ -97,7 +98,7 @@ function SidebarContent({
         {[
           { label: "Matérias",   value: materiasComAcesso.length, icon: "📚", sub: `de ${totalMaterias}` },
           { label: "Tópicos",    value: totalTopicos,              icon: "📝", sub: "disponíveis"        },
-          { label: "Questões",   value: totalQuizzes,              icon: "🧠", sub: "de quiz"            },
+          { label: "Questões",   value: totalQuizzes,              icon: "🧠", sub: "para responder"     },
           { label: "Flashcards", value: totalFlashcards,           icon: "🃏", sub: "para revisar"       },
         ].map(({ label, value, icon, sub }) => (
           <div key={label} className="bg-gray-800/40 border border-gray-700/40 rounded-xl p-3 text-center">
@@ -233,8 +234,12 @@ export default function EstudoDashboard({
         <span className="text-base font-black bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent flex-1">
           StudyBase
         </span>
-        {/* Avatar + nome → perfil | botão Sair */}
+        {/* Avatar + nome → perfil | toggle tema | botão Sair */}
         <div className="flex items-center gap-0.5">
+          <ThemeToggle
+            compact
+            className="w-9 h-9 justify-center rounded-lg text-gray-400 hover:text-gray-200 hover:bg-gray-800"
+          />
           <Link
             href="/estudo/perfil"
             className="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-800 active:bg-gray-800 transition-colors group"

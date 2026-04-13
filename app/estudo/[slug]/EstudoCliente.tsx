@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 /* ─── Tipos ─────────────────────────────────────────────────────────────── */
 type Opcao     = { id: string; texto: string; correta: boolean; ordem: number };
@@ -274,11 +275,31 @@ export default function EstudoCliente({
     if (!opcaoId) return;
     const correta = !!quiz.opcoes.find((o) => o.id === opcaoId)?.correta;
     setRevelados((r) => new Set([...r, quiz.id]));
-    // Grava no banco (fire-and-forget — não bloqueia UI)
+    // Grava no banco — salva última resposta + registra no histórico de tentativas
     fetch("/api/estudo/responder-quiz", {
       method:  "POST",
       headers: { "Content-Type": "application/json" },
       body:    JSON.stringify({ quizId: quiz.id, opcaoId, correta, topicoId: topicoAtivo.id }),
+    }).catch(() => {});
+  }
+
+  // Nova tentativa por questão individual — limpa localmente e remove do banco
+  function novaTentativa(quizId: string) {
+    setRespostas((prev) => {
+      const next = { ...prev };
+      delete next[quizId];
+      return next;
+    });
+    setRevelados((prev) => {
+      const next = new Set(prev);
+      next.delete(quizId);
+      return next;
+    });
+    // Remove RespostaQuiz do banco (histórico é preservado)
+    fetch("/api/estudo/responder-quiz", {
+      method:  "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ quizId }),
     }).catch(() => {});
   }
 
@@ -361,6 +382,10 @@ export default function EstudoCliente({
           )}
         </div>
         <div className="flex items-center gap-0.5 shrink-0 border-l border-gray-800 pl-2 ml-1">
+          <ThemeToggle
+            compact
+            className="w-9 h-9 justify-center rounded-xl text-gray-400 hover:text-gray-200 hover:bg-gray-800"
+          />
           <Link
             href="/estudo/perfil"
             className="flex items-center gap-1.5 px-2 py-2 rounded-xl hover:bg-gray-800 active:bg-gray-700 transition-colors group"
@@ -438,17 +463,36 @@ export default function EstudoCliente({
             /* ── Tópico ativo ── */
             <div className="px-4 sm:px-6 lg:px-8 xl:px-10 py-5 sm:py-6">
 
-              {/* Breadcrumb */}
+              {/* Breadcrumb com numeração */}
               {(() => {
-                const bloco = materia.blocos.find((b) => b.topicos.some((t) => t.id === topicoAtivo.id));
+                const blocoIdx = materia.blocos.findIndex((b) => b.topicos.some((t) => t.id === topicoAtivo.id));
+                const bloco = blocoIdx >= 0 ? materia.blocos[blocoIdx] : null;
+                const topicoIdx = bloco ? bloco.topicos.findIndex((t) => t.id === topicoAtivo.id) : -1;
                 return bloco ? (
-                  <div className="flex flex-wrap items-center gap-2 mb-5">
-                    <span className="text-xs text-gray-600 shrink-0">{bloco.nome}</span>
-                    <span className="text-gray-700 shrink-0">›</span>
-                    <span className="text-xs text-gray-400 min-w-0 truncate flex-1">{topicoAtivo.titulo}</span>
+                  <div className="flex flex-wrap items-center gap-1.5 mb-5 text-xs bg-gray-900/60 border border-gray-800/60 rounded-xl px-3 py-2">
+                    {/* Matéria */}
+                    <Link href="/estudo" className="flex items-center gap-1 text-gray-600 hover:text-gray-400 transition-colors shrink-0">
+                      <span>📚</span>
+                      <span>{materia.nome}</span>
+                    </Link>
+                    <span className="text-gray-700">›</span>
+                    {/* Bloco */}
+                    <span className="flex items-center gap-1 text-gray-500 shrink-0">
+                      <span>📦</span>
+                      <span className="font-mono text-gray-600">B{blocoIdx + 1}/{materia.blocos.length}</span>
+                      <span>{bloco.nome}</span>
+                    </span>
+                    <span className="text-gray-700">›</span>
+                    {/* Tópico */}
+                    <span className="flex items-center gap-1 text-gray-400 min-w-0 flex-1">
+                      <span>📄</span>
+                      <span className="font-mono text-gray-600 shrink-0">T{topicoIdx + 1}/{bloco.topicos.length}</span>
+                      <span className="truncate">{topicoAtivo.titulo}</span>
+                    </span>
+                    {/* Status */}
                     {topicosConcluidos.has(topicoAtivo.id) && (
-                      <span className="text-xs text-emerald-400 shrink-0 flex items-center gap-1">
-                        <span>✓</span> Tópico concluído
+                      <span className="text-xs text-emerald-400 shrink-0 flex items-center gap-1 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-lg">
+                        ✓ Concluído
                       </span>
                     )}
                   </div>
@@ -478,12 +522,12 @@ export default function EstudoCliente({
                       <span>{aba === "conteudo" ? "📖" : aba === "quiz" ? "🧠" : "🃏"}</span>
                       <span className="hidden sm:inline">
                         {aba === "conteudo" && "Conteúdo"}
-                        {aba === "quiz" && `Quiz (${topicoAtivo.quizzes.length})`}
+                        {aba === "quiz" && `Questões (${topicoAtivo.quizzes.length})`}
                         {aba === "flashcards" && `Cards (${topicoAtivo.flashcards.length})`}
                       </span>
                       <span className="sm:hidden text-xs">
                         {aba === "conteudo" && "Leitura"}
-                        {aba === "quiz" && `Quiz${topicoAtivo.quizzes.length > 0 ? ` (${topicoAtivo.quizzes.length})` : ""}`}
+                        {aba === "quiz" && `Questões${topicoAtivo.quizzes.length > 0 ? ` (${topicoAtivo.quizzes.length})` : ""}`}
                         {aba === "flashcards" && `Cards${topicoAtivo.flashcards.length > 0 ? ` (${topicoAtivo.flashcards.length})` : ""}`}
                       </span>
                       {badge && (
@@ -575,7 +619,7 @@ export default function EstudoCliente({
                                 </p>
                                 <p className={`text-xs mt-0.5 ${prog.quizPct >= MINIMO_APROVACAO ? "text-emerald-400/70" : "text-red-400/70"}`}>
                                   {prog.quizPct >= MINIMO_APROVACAO
-                                    ? "Quiz concluído ✓ — Avance para os Flashcards!"
+                                    ? "Questões concluídas ✓ — Avance para os Flashcards!"
                                     : `Mínimo para avançar: ${MINIMO_APROVACAO}%. Tente novamente.`}
                                 </p>
                               </div>
@@ -604,12 +648,16 @@ export default function EstudoCliente({
                         {topicoAtivo.quizzes.map((quiz, qi) => {
                           const respostaId = respostas[quiz.id];
                           const isRevelado = revelados.has(quiz.id);
+                          const acertou    = isRevelado && !!quiz.opcoes.find((o) => o.id === respostaId)?.correta;
                           return (
                             <div key={quiz.id} className="bg-gray-900 border border-gray-800 rounded-2xl p-4 sm:p-6">
+                              {/* Pergunta */}
                               <p className="text-white font-semibold mb-4 leading-relaxed text-sm sm:text-base">
                                 <span className="text-emerald-400 text-sm mr-2 font-normal">Q{qi + 1}</span>
                                 {quiz.pergunta}
                               </p>
+
+                              {/* Opções */}
                               <div className="space-y-2">
                                 {quiz.opcoes.map((opcao) => {
                                   let cls = "w-full text-left px-4 py-4 rounded-xl border text-sm transition-all leading-snug ";
@@ -629,7 +677,9 @@ export default function EstudoCliente({
                                       : "border-gray-700 text-gray-400";
                                   }
                                   return (
-                                    <button key={opcao.id} className={cls} onClick={() => responder(quiz.id, opcao.id)} disabled={isRevelado}>
+                                    <button key={opcao.id} className={cls}
+                                      onClick={() => responder(quiz.id, opcao.id)}
+                                      disabled={isRevelado}>
                                       {isRevelado && opcao.correta && <span className="mr-2">✓</span>}
                                       {isRevelado && opcao.id === respostaId && !opcao.correta && <span className="mr-2">✗</span>}
                                       {opcao.texto}
@@ -637,17 +687,47 @@ export default function EstudoCliente({
                                   );
                                 })}
                               </div>
+
+                              {/* Botão Enviar — aparece quando uma opção foi selecionada mas ainda não enviada */}
                               {respostaId && !isRevelado && (
                                 <button
                                   onClick={() => revelar(quiz)}
-                                  className="mt-4 w-full py-3 text-sm text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-500/60 rounded-xl transition-colors active:bg-emerald-500/10"
+                                  className="mt-4 w-full py-3 text-sm font-semibold text-white bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 rounded-xl transition-colors"
                                 >
-                                  Ver gabarito e explicação
+                                  Enviar resposta
                                 </button>
                               )}
-                              {isRevelado && quiz.explicacao && (
-                                <div className="mt-4 bg-gray-800/60 border border-gray-700 rounded-xl p-4 text-sm text-gray-300 leading-relaxed">
-                                  💡 {quiz.explicacao}
+
+                              {/* Resultado após envio */}
+                              {isRevelado && (
+                                <div className="mt-4 space-y-3">
+                                  {/* Banner de acerto / erro */}
+                                  {acertou ? (
+                                    <div className="flex items-center gap-3 bg-emerald-500/10 border border-emerald-500/30 rounded-xl px-4 py-3">
+                                      <span className="text-xl">✅</span>
+                                      <p className="text-sm font-semibold text-emerald-300">Resposta correta!</p>
+                                    </div>
+                                  ) : (
+                                    <div className="flex items-center justify-between gap-3 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3">
+                                      <div className="flex items-center gap-3">
+                                        <span className="text-xl">❌</span>
+                                        <p className="text-sm font-semibold text-red-300">Resposta incorreta</p>
+                                      </div>
+                                      <button
+                                        onClick={() => novaTentativa(quiz.id)}
+                                        className="shrink-0 text-xs font-semibold bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-300 hover:text-red-200 px-3 py-1.5 rounded-lg transition-colors"
+                                      >
+                                        Nova tentativa
+                                      </button>
+                                    </div>
+                                  )}
+
+                                  {/* Explicação */}
+                                  {quiz.explicacao && (
+                                    <div className="bg-gray-800/60 border border-gray-700 rounded-xl p-4 text-sm text-gray-300 leading-relaxed">
+                                      💡 {quiz.explicacao}
+                                    </div>
+                                  )}
                                 </div>
                               )}
                             </div>

@@ -19,18 +19,23 @@ export async function GET(_req: Request, { params }: Params) {
   }
 }
 
-// PATCH /api/quiz/[id] — atualiza pergunta, explicacao e opções
+// PATCH /api/quiz/[id] — atualiza pergunta, explicacao, dificuldade, tags e opções
 export async function PATCH(request: Request, { params }: Params) {
   try {
     const { id } = await params;
-    const { pergunta, explicacao, opcoes } = await request.json();
+    const { pergunta, explicacao, dificuldade, tags, opcoes } = await request.json();
+
+    // Normaliza tags: array ou string CSV
+    const tagsStr = normalizeTags(tags);
 
     // Atualiza a questão
     await prisma.quiz.update({
       where: { id },
       data: {
-        ...(pergunta   !== undefined && { pergunta }),
-        ...(explicacao !== undefined && { explicacao }),
+        ...(pergunta    !== undefined && { pergunta }),
+        ...(explicacao  !== undefined && { explicacao }),
+        ...(dificuldade !== undefined && { dificuldade }),
+        ...(tags        !== undefined && { tags: tagsStr }),
       },
     });
 
@@ -68,4 +73,18 @@ export async function DELETE(_req: Request, { params }: Params) {
     console.error("[DELETE /api/quiz/[id]]", error);
     return NextResponse.json({ error: "Erro ao deletar questão" }, { status: 500 });
   }
+}
+
+// ── Utilitários ──────────────────────────────────────────────────
+function normalizeTags(raw: unknown): string | null {
+  if (raw === null || raw === undefined) return null;
+  if (Array.isArray(raw)) {
+    const str = raw.map((t) => String(t).trim()).filter(Boolean).join(",");
+    return str || null;
+  }
+  if (typeof raw === "string") {
+    const str = raw.split(",").map((t) => t.trim()).filter(Boolean).join(",");
+    return str || null;
+  }
+  return null;
 }

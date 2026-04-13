@@ -18,6 +18,8 @@ export async function getMateriaData(slug: string): Promise<Materia | null> {
           orderBy: { ordem: "asc" },
           include: {
             topicos: {
+              // NOTA: filtro { publicado: true } só pode ser ativado após
+              // executar `npx prisma db push` para criar a coluna no banco.
               orderBy: { ordem: "asc" },
               include: {
                 quizzes: {
@@ -49,6 +51,8 @@ export async function getAllMateriasData(): Promise<Materia[]> {
           orderBy: { ordem: "asc" },
           include: {
             topicos: {
+              // NOTA: filtro { publicado: true } só pode ser ativado após
+              // executar `npx prisma db push` para criar a coluna no banco.
               orderBy: { ordem: "asc" },
               include: {
                 quizzes: {

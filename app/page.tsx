@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { getAllMateriasData } from "@/lib/getMateriaData";
 import { verifyAccessToken } from "@/lib/auth/jwt";
 import LandingUserButtons from "@/components/LandingUserButtons";
+import LandingGuestButtons from "@/components/LandingGuestButtons";
 
 export const dynamic = "force-dynamic";
 
@@ -48,16 +49,11 @@ export default async function Home() {
               Como funciona
             </a>
             {sessao ? (
-              /* Logado: botão Acessar + Sair (client component) */
+              /* Logado: botão Acessar + Sair + toggle tema (client component) */
               <LandingUserButtons role={sessao.role as "ADMIN" | "USER"} />
             ) : (
-              /* Não logado: botão Entrar */
-              <Link
-                href="/login"
-                className="text-xs text-gray-300 hover:text-white bg-gray-800 hover:bg-gray-700 border border-gray-700 hover:border-gray-500 rounded-lg px-3 py-1.5 transition-colors font-medium"
-              >
-                Entrar
-              </Link>
+              /* Não logado: toggle tema + botão Entrar */
+              <LandingGuestButtons />
             )}
           </div>
         </div>
@@ -98,7 +94,7 @@ export default async function Home() {
           </h1>
 
           <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-10">
-            Conteúdo estruturado em blocos temáticos, questões de múltipla escolha e flashcards
+            Conteúdo estruturado em blocos temáticos, tópicos simplificados, questões de múltipla escolha e flashcards
             para revisão ativa — tudo em um só lugar.
           </p>
 

@@ -61,6 +61,7 @@ model Topico {
   conteudo  String   @db.LongText
   resumo    String?  @db.Text
   ordem     Int      @default(0)
+  publicado Boolean  @default(true)  // false = rascunho, invisível para alunos
   blocoId   String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -77,19 +78,28 @@ model Topico {
 // QUIZ — pergunta de múltipla escolha
 // ─────────────────────────────────────────────
 model Quiz {
-  id         String   @id @default(cuid())
-  pergunta   String   @db.Text
-  explicacao String?  @db.Text
-  ordem      Int      @default(0)
-  topicoId   String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String      @id @default(cuid())
+  pergunta    String      @db.Text
+  explicacao  String?     @db.Text
+  dificuldade Dificuldade @default(MEDIO)
+  tags        String?     @db.Text  // valores separados por vírgula: "SFN,Regulação,Mercado"
+  ordem       Int         @default(0)
+  topicoId    String
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
 
   topico    Topico         @relation(fields: [topicoId], references: [id], onDelete: Cascade)
   opcoes    OpcaoQuiz[]
-  respostas RespostaQuiz[]
+  respostas  RespostaQuiz[]
+  historicos HistoricoRespostaQuiz[]
 
   @@map("quizzes")
+}
+
+enum Dificuldade {
+  FACIL
+  MEDIO
+  DIFICIL
 }
 
 // ─────────────────────────────────────────────
@@ -145,6 +155,7 @@ model User {
   solicitacoes         SolicitacaoMateria[]
   respostasQuiz        RespostaQuiz[]
   revisoesFlashcard    RevisaoFlashcard[]
+  historicosRespostas  HistoricoRespostaQuiz[]
 
   @@map("users")
 }
@@ -244,6 +255,25 @@ model RespostaQuiz {
 
   @@unique([userId, quizId])   // upsert: uma resposta por questão por usuário
   @@map("respostas_quiz")
+}
+
+// ─────────────────────────────────────────────
+// HISTÓRICO DE RESPOSTAS — todas as tentativas do usuário por questão
+// ─────────────────────────────────────────────
+model HistoricoRespostaQuiz {
+  id        String   @id @default(cuid())
+  userId    String
+  quizId    String
+  opcaoId   String   // opção escolhida nesta tentativa
+  correta   Boolean
+  topicoId  String   // denormalizado
+  tentativa Int      // 1ª, 2ª, 3ª tentativa...
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@map("historico_respostas_quiz")
 }
 
 // ─────────────────────────────────────────────

@@ -153,7 +153,7 @@ export default async function AdminPage() {
                     href={`/admin/quiz/${m.slug}`}
                     className="flex-1 text-center text-xs py-1.5 rounded-lg bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 hover:text-violet-200 transition-colors"
                   >
-                    🧠 Quiz
+                    🧠 Questões
                   </Link>
                   <Link
                     href={`/admin/flashcards/${m.slug}`}

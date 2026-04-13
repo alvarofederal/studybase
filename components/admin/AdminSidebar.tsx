@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 type Materia = {
   id: string;
@@ -52,10 +53,11 @@ export default function AdminSidebar() {
   const navItems = [
     { href: "/admin",              label: "Dashboard",    icon: "⊞", exact: true,  badge: 0 },
     { href: "/admin/materias",     label: "Matérias",     icon: "📚", exact: false, badge: 0 },
-    { href: "/admin/quiz",         label: "Quiz",         icon: "🧠", exact: false, badge: 0 },
+    { href: "/admin/quiz",         label: "Questões",     icon: "🧠", exact: false, badge: 0 },
     { href: "/admin/flashcards",   label: "Flashcards",   icon: "🃏", exact: false, badge: 0 },
     { href: "/admin/solicitacoes", label: "Solicitações", icon: "🔔", exact: false, badge: pendentes },
     { href: "/admin/usuarios",     label: "Usuários",     icon: "👥", exact: false, badge: 0 },
+    { href: "/admin/stats",        label: "Estatísticas", icon: "📊", exact: false, badge: 0 },
     { href: "/admin/context",      label: "Contexto IA",  icon: "🤖", exact: false, badge: 0 },
   ];
 
@@ -154,6 +156,7 @@ export default function AdminSidebar() {
             </div>
           </Link>
         )}
+        <ThemeToggle className="w-full px-2 py-1.5 rounded-lg text-xs text-gray-500 hover:text-gray-300 hover:bg-gray-800" />
         <button
           onClick={handleLogout}
           className="w-full flex items-center gap-2.5 px-2 py-1.5 rounded-lg text-xs text-gray-500 hover:text-red-400 hover:bg-red-500/10 transition-colors"

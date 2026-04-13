@@ -28,12 +28,12 @@ export async function DELETE(_req: Request, { params }: Params) {
   }
 }
 
-// PATCH /api/topicos/[id] — atualiza título, slug, resumo e/ou conteúdo
+// PATCH /api/topicos/[id] — atualiza título, slug, resumo, conteudo e/ou publicado
 export async function PATCH(request: Request, { params }: Params) {
   try {
     const { id } = await params;
     const body = await request.json();
-    const { titulo, slug, resumo, conteudo } = body;
+    const { titulo, slug, resumo, conteudo, publicado } = body;
 
     const topico = await prisma.topico.update({
       where: { id },
@@ -42,6 +42,7 @@ export async function PATCH(request: Request, { params }: Params) {
         ...(slug      !== undefined && { slug }),
         ...(resumo    !== undefined && { resumo }),
         ...(conteudo  !== undefined && { conteudo }),
+        ...(publicado !== undefined && { publicado }),
       },
     });
 

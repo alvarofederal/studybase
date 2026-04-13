@@ -7,10 +7,23 @@ import { useParams } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 // ── Tipos ─────────────────────────────────────────────────────
+type Dificuldade = "FACIL" | "MEDIO" | "DIFICIL";
 type Opcao   = { id?: string; texto: string; correta: boolean };
-type Quiz    = { id: string; pergunta: string; explicacao: string | null; opcoes: Opcao[] };
+type Quiz    = { id: string; pergunta: string; explicacao: string | null; dificuldade: Dificuldade; tags: string | null; opcoes: Opcao[] };
+
+const DIFICULDADE_META: Record<Dificuldade, { label: string; cls: string }> = {
+  FACIL:   { label: "Fácil",  cls: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
+  MEDIO:   { label: "Médio",  cls: "bg-amber-500/15   text-amber-400   border-amber-500/30"   },
+  DIFICIL: { label: "Difícil",cls: "bg-red-500/15     text-red-400     border-red-500/30"     },
+};
+
+function parseTags(raw: string | null): string[] {
+  if (!raw) return [];
+  return raw.split(",").map((t) => t.trim()).filter(Boolean);
+}
 type Flashcard = { id: string; frente: string; verso: string; dica: string | null };
-type Topico  = { id: string; titulo: string; slug: string; resumo: string | null; conteudo: string; ordem: number };
+type Topico  = { id: string; titulo: string; slug: string; resumo: string | null; conteudo: string; ordem: number; publicado: boolean };
+type CsvRow  = { pergunta: string; opcaoA: string; opcaoB: string; opcaoC: string; opcaoD: string; correta: string; explicacao: string; dificuldade: string; tags: string; erro?: string };
 type Bloco   = { id: string; nome: string; slug: string; descricao: string | null; ordem: number; _count?: { topicos: number } };
 type Materia = { id: string; nome: string; slug: string; icone: string | null; cor: string | null; descricao: string | null; blocos: Bloco[] };
 
@@ -61,9 +74,11 @@ export default function MateriaDetailPage() {
   const [formTop, setFormTop] = useState({ titulo: "", slug: "", resumo: "", conteudo: "" });
 
   // Form: Quiz
-  const [pergunta, setPergunta]     = useState("");
-  const [explicacao, setExplicacao] = useState("");
-  const [opcoes, setOpcoes]         = useState<Opcao[]>([novaOpcao(), novaOpcao(), novaOpcao(), novaOpcao()]);
+  const [pergunta, setPergunta]         = useState("");
+  const [explicacao, setExplicacao]     = useState("");
+  const [quizDific, setQuizDific]       = useState<Dificuldade>("MEDIO");
+  const [quizTags, setQuizTags]         = useState("");
+  const [opcoes, setOpcoes]             = useState<Opcao[]>([novaOpcao(), novaOpcao(), novaOpcao(), novaOpcao()]);
 
   // Form: Flashcard
   const [frente, setFrente] = useState("");
@@ -83,6 +98,17 @@ export default function MateriaDetailPage() {
 
   // Exclusão de tópico
   const [deletandoTopicoId, setDeletandoTopicoId] = useState<string | null>(null);
+
+  // Toggle publicado
+  const [toggleandoPublicadoId, setToggleandoPublicadoId] = useState<string | null>(null);
+
+  // Importação CSV
+  const [showImport, setShowImport]     = useState(false);
+  const [csvText, setCsvText]           = useState("");
+  const [csvPreview, setCsvPreview]     = useState<CsvRow[]>([]);
+  const [csvErro, setCsvErro]           = useState("");
+  const [importando, setImportando]     = useState(false);
+  const [csvSubstituir, setCsvSubstituir] = useState(false);
 
   // Feedback
   const [erro, setErro]       = useState("");
@@ -236,6 +262,101 @@ export default function MateriaDetailPage() {
     } finally { setDeletandoTopicoId(null); }
   };
 
+  // ── Toggle publicado ─────────────────────────────────────────
+  const togglePublicado = async (t: Topico) => {
+    setToggleandoPublicadoId(t.id);
+    try {
+      const res = await fetch(`/api/topicos/${t.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ publicado: !t.publicado }),
+      });
+      if (!res.ok) { flash("Erro ao alterar status."); return; }
+      const updated: Topico = await res.json();
+      setTopicos((prev) => prev.map((x) => x.id === t.id ? updated : x));
+      if (topicoSel?.id === t.id) setTopicoSel(updated);
+      flash(updated.publicado ? "Tópico publicado!" : "Tópico movido para rascunho!");
+    } catch { flash("Erro ao alterar status."); }
+    finally { setToggleandoPublicadoId(null); }
+  };
+
+  // ── CSV: parser de linha com suporte a aspas ─────────────────
+  function parseCSVLine(line: string): string[] {
+    const result: string[] = [];
+    let current = "";
+    let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === '"') {
+        if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+        else inQuotes = !inQuotes;
+      } else if (ch === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = "";
+      } else {
+        current += ch;
+      }
+    }
+    result.push(current.trim());
+    return result;
+  }
+
+  function parseCSV(text: string): CsvRow[] {
+    const lines = text.trim().split("\n").filter((l) => l.trim());
+    if (lines.length === 0) return [];
+    // Pula linha de cabeçalho se tiver "pergunta"
+    const start = lines[0].toLowerCase().includes("pergunta") ? 1 : 0;
+    return lines.slice(start).map((line, i) => {
+      const [pergunta = "", opcaoA = "", opcaoB = "", opcaoC = "", opcaoD = "", correta = "", explicacao = "", dificuldade = "", tags = ""] = parseCSVLine(line);
+      const row: CsvRow = { pergunta, opcaoA, opcaoB, opcaoC, opcaoD, correta: correta.trim().toUpperCase(), explicacao, dificuldade, tags };
+      if (!pergunta.trim()) row.erro = `Linha ${i + start + 1}: pergunta vazia`;
+      else if (!opcaoA.trim() || !opcaoB.trim() || !opcaoC.trim() || !opcaoD.trim()) row.erro = `Linha ${i + start + 1}: opções incompletas`;
+      else if (!["A", "B", "C", "D"].includes(row.correta)) row.erro = `Linha ${i + start + 1}: 'correta' deve ser A, B, C ou D`;
+      return row;
+    });
+  }
+
+  // ── Importar questões via API ─────────────────────────────────
+  const importarQuestoes = async () => {
+    if (!topicoSel) return;
+    const validas = csvPreview.filter((r) => !r.erro);
+    if (validas.length === 0) { setCsvErro("Nenhuma linha válida para importar."); return; }
+    setImportando(true); setCsvErro("");
+    try {
+      const res = await fetch("/api/admin/quiz/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topicoId: topicoSel.id,
+          substituir: csvSubstituir,
+          questoes: validas.map((r) => ({
+            pergunta:    r.pergunta,
+            opcaoA:      r.opcaoA,
+            opcaoB:      r.opcaoB,
+            opcaoC:      r.opcaoC,
+            opcaoD:      r.opcaoD,
+            correta:     r.correta,
+            explicacao:  r.explicacao || null,
+            dificuldade: r.dificuldade || "MEDIO",
+            tags:        r.tags || null,
+          })),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setCsvErro(data.error ?? "Erro ao importar."); return; }
+      if (data.erros?.length > 0) setCsvErro(`${data.erros.length} erro(s): ${data.erros[0]}`);
+      const rQ = await fetch(`/api/quiz?topicoId=${topicoSel.id}`);
+      setQuizzes(await rQ.json());
+      setShowImport(false);
+      setCsvText(""); setCsvPreview([]); setCsvSubstituir(false);
+      const msg = data.apagadas > 0
+        ? `${data.apagadas} substituída(s) → ${data.criadas} importada(s)!`
+        : `${data.criadas} questão(ões) importada(s)!`;
+      flash(msg);
+    } catch { setCsvErro("Erro de rede ao importar."); }
+    finally { setImportando(false); }
+  };
+
   // ── Abrir edição da matéria ────────────────────────────────
   const abrirEditMateria = () => {
     if (!materia) return;
@@ -322,12 +443,12 @@ export default function MateriaDetailPage() {
     const res = await fetch("/api/quiz", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pergunta, explicacao, topicoId: topicoSel.id, opcoes }),
+      body: JSON.stringify({ pergunta, explicacao, dificuldade: quizDific, tags: quizTags.trim() || null, topicoId: topicoSel.id, opcoes }),
     });
     if (!res.ok) return setErro((await res.json()).error ?? "Erro");
     const r = await fetch(`/api/quiz?topicoId=${topicoSel.id}`);
     setQuizzes(await r.json());
-    setPergunta(""); setExplicacao(""); setOpcoes([novaOpcao(), novaOpcao(), novaOpcao(), novaOpcao()]);
+    setPergunta(""); setExplicacao(""); setQuizDific("MEDIO"); setQuizTags(""); setOpcoes([novaOpcao(), novaOpcao(), novaOpcao(), novaOpcao()]);
     setShowFormQuiz(false);
     flash("Questão criada!");
   };
@@ -413,7 +534,7 @@ export default function MateriaDetailPage() {
               href={`/admin/quiz/${materia.slug}`}
               className="text-xs px-3 py-1.5 rounded-xl bg-violet-600/20 border border-violet-500/30 text-violet-300 hover:bg-violet-600/30 transition-colors"
             >
-              🧠 Quiz
+              🧠 Questões
             </Link>
             <Link
               href={`/admin/flashcards/${materia.slug}`}
@@ -516,6 +637,62 @@ export default function MateriaDetailPage() {
               </div>
             </div>
           </form>
+        )}
+      </div>
+
+      {/* ── Breadcrumb de posição atual ── */}
+      <div className="px-6 py-2 bg-gray-950 border-b border-gray-800/60 flex items-center gap-1.5 text-xs text-gray-600 shrink-0 overflow-x-auto">
+        {/* Matéria */}
+        <span className="flex items-center gap-1 shrink-0">
+          <span>📚</span>
+          <span className="text-gray-500 font-medium">
+            Matéria {blocos.length > 0 ? `1/${blocos.length} blocos` : ""}:
+          </span>
+          <span className="text-emerald-400 font-semibold">{materia.nome}</span>
+        </span>
+
+        {/* Bloco selecionado */}
+        {blocoSel && (() => {
+          const blocoIdx = blocos.findIndex((b) => b.id === blocoSel.id);
+          return (
+            <>
+              <span className="text-gray-700">›</span>
+              <span className="flex items-center gap-1 shrink-0">
+                <span>📦</span>
+                <span className="text-gray-500">Bloco {blocoIdx + 1}/{blocos.length}:</span>
+                <span className="text-teal-400 font-semibold">{blocoSel.nome}</span>
+                {topicos.length > 0 && <span className="text-gray-600">({topicos.length} tópico{topicos.length !== 1 ? "s" : ""})</span>}
+              </span>
+            </>
+          );
+        })()}
+
+        {/* Tópico selecionado */}
+        {topicoSel && (() => {
+          const topicoIdx = topicos.findIndex((t) => t.id === topicoSel.id);
+          return (
+            <>
+              <span className="text-gray-700">›</span>
+              <span className="flex items-center gap-1 shrink-0">
+                <span>📄</span>
+                <span className="text-gray-500">Tópico {topicoIdx + 1}/{topicos.length}:</span>
+                <span className="text-violet-400 font-semibold">{topicoSel.titulo}</span>
+                {!topicoSel.publicado && (
+                  <span className="text-amber-400 font-mono text-[10px] bg-amber-500/10 border border-amber-500/25 px-1.5 py-0.5 rounded">rascunho</span>
+                )}
+                {quizzes.length > 0 && <span className="text-gray-600">· {quizzes.length} questão{quizzes.length !== 1 ? "ões" : ""}</span>}
+                {flashcards.length > 0 && <span className="text-gray-600">· {flashcards.length} flashcard{flashcards.length !== 1 ? "s" : ""}</span>}
+              </span>
+            </>
+          );
+        })()}
+
+        {/* Instrução quando nada selecionado */}
+        {!blocoSel && (
+          <span className="text-gray-700 italic ml-1">← selecione um bloco para navegar</span>
+        )}
+        {blocoSel && !topicoSel && (
+          <span className="text-gray-700 italic ml-1">← selecione um tópico</span>
         )}
       </div>
 
@@ -712,21 +889,38 @@ export default function MateriaDetailPage() {
                   topicos.map((t, idx) => (
                     <div key={t.id} className={`border-l-2 transition-colors ${topicoSel?.id === t.id ? "border-emerald-500 bg-emerald-500/10" : "border-transparent"}`}>
                       <div className={`flex items-center gap-1 pr-2 group ${topicoSel?.id === t.id ? "text-white" : "text-gray-300 hover:text-white hover:bg-gray-800/50"}`}>
-                        <button onClick={() => selecionarTopico(t)} className="flex-1 text-left px-4 py-3">
+                        <button onClick={() => selecionarTopico(t)} className="flex-1 text-left px-4 py-3 min-w-0">
                           <div className="flex items-start gap-2">
                             <span className="text-[10px] font-mono text-gray-600 shrink-0 mt-0.5">{idx + 1}.</span>
                             <span className="text-sm font-medium leading-tight">{t.titulo}</span>
+                            {!t.publicado && (
+                              <span className="text-[9px] text-amber-500 bg-amber-500/10 border border-amber-500/20 px-1 py-0.5 rounded shrink-0 leading-none mt-0.5">
+                                rascunho
+                              </span>
+                            )}
                           </div>
                           {t.resumo && <p className="text-xs text-gray-600 mt-0.5 ml-5 line-clamp-2">{t.resumo}</p>}
                         </button>
-                        <button
-                          onClick={() => deletarTopico(t.id)}
-                          disabled={deletandoTopicoId === t.id}
-                          className="hidden group-hover:flex text-gray-600 hover:text-red-400 hover:bg-red-500/10 bg-gray-800 p-1 rounded text-xs transition-colors disabled:opacity-40 shrink-0"
-                          title="Excluir tópico"
-                        >
-                          {deletandoTopicoId === t.id ? "…" : "🗑"}
-                        </button>
+                        <div className="hidden group-hover:flex items-center gap-0.5 shrink-0">
+                          <button
+                            onClick={() => togglePublicado(t)}
+                            disabled={toggleandoPublicadoId === t.id}
+                            title={t.publicado ? "Publicado — clique para rascunho" : "Rascunho — clique para publicar"}
+                            className={`p-1.5 rounded text-xs transition-colors disabled:opacity-40 bg-gray-800 hover:bg-gray-700 ${
+                              t.publicado ? "text-emerald-500" : "text-gray-600 hover:text-emerald-400"
+                            }`}
+                          >
+                            {toggleandoPublicadoId === t.id ? "…" : (t.publicado ? "●" : "○")}
+                          </button>
+                          <button
+                            onClick={() => deletarTopico(t.id)}
+                            disabled={deletandoTopicoId === t.id}
+                            className="text-gray-600 hover:text-red-400 hover:bg-red-500/10 bg-gray-800 p-1.5 rounded text-xs transition-colors disabled:opacity-40"
+                            title="Excluir tópico"
+                          >
+                            {deletandoTopicoId === t.id ? "…" : "🗑"}
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))
@@ -866,20 +1060,151 @@ export default function MateriaDetailPage() {
                     <section>
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-sm font-bold text-violet-300 flex items-center gap-2">
-                          🧠 Quiz
+                          🧠 Questões
                           <span className="text-xs font-mono text-gray-600">{quizzes.length} questões</span>
                         </h3>
-                        <button
-                          onClick={() => { setShowFormQuiz((v) => !v); setErro(""); }}
-                          className={`text-xs px-3 py-1 rounded-lg transition-colors ${
-                            showFormQuiz
-                              ? "bg-gray-800 text-gray-500"
-                              : "bg-violet-600/20 border border-violet-500/30 text-violet-300 hover:bg-violet-600/30"
-                          }`}
-                        >
-                          {showFormQuiz ? "✕ Cancelar" : "+ Questão"}
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => { setShowImport((v) => !v); setShowFormQuiz(false); setCsvText(""); setCsvPreview([]); setCsvErro(""); }}
+                            className={`text-xs px-2.5 py-1 rounded-lg transition-colors border ${
+                              showImport
+                                ? "bg-gray-800 text-gray-500 border-gray-700"
+                                : "bg-gray-800/60 border-gray-700 text-gray-400 hover:text-violet-300 hover:border-violet-500/40"
+                            }`}
+                          >
+                            {showImport ? "✕" : "⬆ CSV"}
+                          </button>
+                          <button
+                            onClick={() => { setShowFormQuiz((v) => !v); setShowImport(false); setErro(""); }}
+                            className={`text-xs px-3 py-1 rounded-lg transition-colors ${
+                              showFormQuiz
+                                ? "bg-gray-800 text-gray-500"
+                                : "bg-violet-600/20 border border-violet-500/30 text-violet-300 hover:bg-violet-600/30"
+                            }`}
+                          >
+                            {showFormQuiz ? "✕ Cancelar" : "+ Questão"}
+                          </button>
+                        </div>
                       </div>
+
+                      {/* Modal importação CSV */}
+                      {showImport && (
+                        <div className="bg-gray-900 border border-violet-500/20 rounded-xl p-5 mb-4 space-y-4">
+                          <h4 className="text-sm font-bold text-violet-300">⬆ Importar questões via CSV</h4>
+
+                          {/* Instruções */}
+                          <div className="bg-gray-800/60 border border-gray-700 rounded-lg p-3 space-y-1">
+                            <p className="text-[10px] text-gray-400 font-mono">
+                              pergunta,opcaoA,opcaoB,opcaoC,opcaoD,correta,explicacao,dificuldade,tags
+                            </p>
+                            <p className="text-[10px] text-gray-600 leading-relaxed">
+                              <span className="text-gray-500 font-semibold">correta</span>: A, B, C ou D &nbsp;·&nbsp;
+                              <span className="text-gray-500 font-semibold">dificuldade</span>: FACIL, MEDIO ou DIFICIL (opcional) &nbsp;·&nbsp;
+                              Use aspas duplas para texto com vírgulas
+                            </p>
+                          </div>
+
+                          {/* Textarea CSV */}
+                          <textarea
+                            value={csvText}
+                            onChange={(e) => {
+                              setCsvText(e.target.value);
+                              setCsvPreview(e.target.value.trim() ? parseCSV(e.target.value) : []);
+                              setCsvErro("");
+                            }}
+                            rows={6}
+                            placeholder={"pergunta,opcaoA,opcaoB,opcaoC,opcaoD,correta,explicacao,dificuldade,tags\n\"Qual é o CMN?\",\"Banco Central\",\"CMN\",\"CVM\",\"Susep\",B,\"O CMN regula o SFN\",MEDIO,SFN"}
+                            spellCheck={false}
+                            className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-violet-500 resize-y"
+                          />
+
+                          {/* Preview das linhas parseadas */}
+                          {csvPreview.length > 0 && (
+                            <div className="space-y-2">
+                              <p className="text-xs text-gray-500">
+                                <span className="text-emerald-400 font-semibold">{csvPreview.filter((r) => !r.erro).length}</span> válida(s) &nbsp;·&nbsp;
+                                <span className="text-red-400 font-semibold">{csvPreview.filter((r) => r.erro).length}</span> com erro
+                              </p>
+                              <div className="max-h-48 overflow-y-auto space-y-1.5 pr-1">
+                                {csvPreview.map((row, i) => (
+                                  <div
+                                    key={i}
+                                    className={`text-xs px-3 py-2 rounded-lg border ${
+                                      row.erro
+                                        ? "border-red-500/30 bg-red-500/5 text-red-400"
+                                        : "border-gray-700 bg-gray-800/60 text-gray-300"
+                                    }`}
+                                  >
+                                    {row.erro ? (
+                                      <span>{row.erro}</span>
+                                    ) : (
+                                      <div className="flex items-start gap-2">
+                                        <span className="text-violet-400 font-mono shrink-0">{i + 1}.</span>
+                                        <div className="min-w-0">
+                                          <p className="truncate font-medium">{row.pergunta}</p>
+                                          <p className="text-gray-600 text-[10px] mt-0.5">
+                                            ✓ {row.correta} &nbsp;·&nbsp; {[row.opcaoA, row.opcaoB, row.opcaoC, row.opcaoD].join(" / ")}
+                                          </p>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {csvErro && (
+                            <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">⚠ {csvErro}</p>
+                          )}
+
+                          {/* Toggle substituir */}
+                          <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${
+                            csvSubstituir
+                              ? "border-amber-500/40 bg-amber-500/10"
+                              : "border-gray-700 bg-gray-800/40 hover:border-gray-600"
+                          }`}>
+                            <input
+                              type="checkbox"
+                              checked={csvSubstituir}
+                              onChange={(e) => setCsvSubstituir(e.target.checked)}
+                              className="mt-0.5 accent-amber-500"
+                            />
+                            <div>
+                              <p className={`text-xs font-semibold ${csvSubstituir ? "text-amber-300" : "text-gray-400"}`}>
+                                Substituir todas as questões existentes
+                              </p>
+                              <p className="text-[10px] text-gray-600 mt-0.5">
+                                Apaga as questões atuais do tópico antes de importar. Use quando o CSV já contém as questões anteriores mais as novas.
+                              </p>
+                            </div>
+                          </label>
+
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={importarQuestoes}
+                              disabled={importando || csvPreview.filter((r) => !r.erro).length === 0}
+                              className={`disabled:opacity-40 text-white text-xs font-bold px-5 py-2 rounded-lg transition-colors ${
+                                csvSubstituir
+                                  ? "bg-amber-600 hover:bg-amber-500"
+                                  : "bg-violet-600 hover:bg-violet-500"
+                              }`}
+                            >
+                              {importando
+                                ? "Importando…"
+                                : csvSubstituir
+                                  ? `Substituir tudo (${csvPreview.filter((r) => !r.erro).length} questões)`
+                                  : `Adicionar ${csvPreview.filter((r) => !r.erro).length} questão(ões)`}
+                            </button>
+                            <button
+                              onClick={() => { setShowImport(false); setCsvText(""); setCsvPreview([]); setCsvSubstituir(false); }}
+                              className="text-xs text-gray-600 hover:text-gray-400"
+                            >
+                              Cancelar
+                            </button>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Form quiz */}
                       {showFormQuiz && (
@@ -921,6 +1246,28 @@ export default function MateriaDetailPage() {
                               ))}
                             </div>
                           </div>
+                          {/* Dificuldade + Tags */}
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1.5">Dificuldade</label>
+                              <div className="flex gap-1">
+                                {(["FACIL", "MEDIO", "DIFICIL"] as Dificuldade[]).map((d) => (
+                                  <button key={d} type="button" onClick={() => setQuizDific(d)}
+                                    className={`flex-1 py-1 rounded-md border text-[10px] font-semibold transition-all ${
+                                      quizDific === d ? DIFICULDADE_META[d].cls : "border-gray-700 text-gray-600 hover:text-gray-400"
+                                    }`}>
+                                    {DIFICULDADE_META[d].label}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-xs text-gray-500 mb-1">Tags <span className="text-gray-600">(vírgula)</span></label>
+                              <input type="text" value={quizTags} onChange={(e) => setQuizTags(e.target.value)}
+                                placeholder="SFN, Regulação…"
+                                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-white focus:outline-none focus:border-violet-500" />
+                            </div>
+                          </div>
                           <div>
                             <label className="block text-xs text-gray-500 mb-1">Explicação (opcional)</label>
                             <textarea
@@ -953,8 +1300,20 @@ export default function MateriaDetailPage() {
                                 <span className="text-xs font-mono text-violet-400 bg-violet-500/10 px-1.5 py-0.5 rounded shrink-0 mt-0.5">
                                   Q{qi + 1}
                                 </span>
-                                <p className="text-sm text-white leading-relaxed">{q.pergunta}</p>
+                                <p className="text-sm text-white leading-relaxed flex-1">{q.pergunta}</p>
+                                {q.dificuldade && (
+                                  <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full border shrink-0 ${DIFICULDADE_META[q.dificuldade].cls}`}>
+                                    {DIFICULDADE_META[q.dificuldade].label}
+                                  </span>
+                                )}
                               </div>
+                              {parseTags(q.tags).length > 0 && (
+                                <div className="px-4 pb-1 flex flex-wrap gap-1">
+                                  {parseTags(q.tags).map((tag) => (
+                                    <span key={tag} className="text-[9px] px-1.5 py-0.5 rounded-full bg-gray-800 border border-gray-700 text-gray-500">#{tag}</span>
+                                  ))}
+                                </div>
+                              )}
                               <div className="px-4 pb-3 space-y-1">
                                 {q.opcoes.map((op, oi) => (
                                   <div
