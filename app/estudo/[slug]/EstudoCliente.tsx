@@ -1055,7 +1055,7 @@ export default function EstudoCliente({
                     className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white rounded-xl font-semibold transition-colors flex items-center justify-center gap-2"
                   >
                     <span>▶</span>
-                    <span>Ir para "{primeiroIncompleto.titulo}"</span>
+                    <span>Ir para &ldquo;{primeiroIncompleto.titulo}&rdquo;</span>
                   </button>
                 )}
                 <button
