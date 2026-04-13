@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Importação CSV — StudyBase</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: #030712; color: #e2e8f0; min-height: 100vh; padding: 40px 24px; }
+  h1 { text-align: center; font-size: 1.6rem; font-weight: 900; margin-bottom: 6px;
+       background: linear-gradient(90deg, #34d399, #2dd4bf); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .subtitle { text-align: center; color: #6b7280; font-size: 0.85rem; margin-bottom: 40px; }
+
+  /* ── FLUXO ── */
+  .flow { display: flex; flex-direction: column; gap: 0; max-width: 780px; margin: 0 auto 48px; }
+
+  .step { display: flex; gap: 16px; align-items: flex-start; position: relative; }
+  .step:not(:last-child)::after {
+    content: '';
+    position: absolute;
+    left: 23px;
+    top: 52px;
+    width: 2px;
+    height: calc(100% - 20px);
+    background: linear-gradient(to bottom, #374151, #1f2937);
+  }
+
+  .step-num {
+    width: 48px; height: 48px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; flex-shrink: 0; position: relative; z-index: 1;
+    border: 2px solid;
+  }
+  .step-num.green  { background: #022c22; border-color: #059669; }
+  .step-num.amber  { background: #1c1400; border-color: #d97706; }
+  .step-num.violet { background: #13091f; border-color: #7c3aed; }
+  .step-num.red    { background: #1c0a0a; border-color: #dc2626; }
+  .step-num.teal   { background: #021c1c; border-color: #0d9488; }
+
+  .step-body { flex: 1; padding-bottom: 28px; }
+  .step-title { font-weight: 700; font-size: 1rem; margin-bottom: 6px; margin-top: 10px; }
+  .step-desc  { font-size: 0.83rem; color: #9ca3af; line-height: 1.6; }
+  .step-desc strong { color: #e2e8f0; }
+
+  /* ── CSV FORMAT ── */
+  .csv-box { background: #0f172a; border: 1px solid #1e3a5f; border-radius: 12px; padding: 20px; margin: 0 auto 40px; max-width: 780px; overflow-x: auto; }
+  .csv-box h2 { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #60a5fa; margin-bottom: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+  th { background: #1e3a5f; color: #93c5fd; padding: 8px 10px; text-align: left; font-weight: 700; white-space: nowrap; }
+  td { padding: 7px 10px; border-bottom: 1px solid #1e293b; color: #cbd5e1; vertical-align: top; }
+  tr:last-child td { border-bottom: none; }
+  td.required { color: #f87171; font-weight: 700; }
+  td.optional { color: #6b7280; font-style: italic; }
+  td.values   { color: #86efac; font-family: monospace; }
+  code { font-family: 'Consolas', monospace; background: #1e293b; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; }
+
+  /* ── MODOS ── */
+  .modes { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; max-width: 780px; margin: 0 auto 40px; }
+  .mode-card { border-radius: 14px; padding: 20px; border: 1.5px solid; }
+  .mode-card.green  { background: #022c22; border-color: #059669; }
+  .mode-card.amber  { background: #1c1400; border-color: #d97706; }
+  .mode-card h3 { font-size: 0.9rem; font-weight: 800; margin-bottom: 8px; }
+  .mode-card.green h3 { color: #34d399; }
+  .mode-card.amber h3 { color: #fbbf24; }
+  .mode-card p  { font-size: 0.8rem; color: #9ca3af; line-height: 1.6; }
+  .mode-card p strong { color: #e2e8f0; }
+
+  /* ── AVISO ── */
+  .tip { display: flex; gap: 12px; align-items: flex-start; background: #1c1400; border: 1px solid #92400e; border-radius: 12px;
+         padding: 16px 20px; max-width: 780px; margin: 0 auto 40px; font-size: 0.83rem; color: #fcd34d; line-height: 1.6; }
+  .tip-icon { font-size: 1.3rem; flex-shrink: 0; }
+
+  /* ── EXEMPLO CSV ── */
+  .csv-example { background: #0a0f1e; border: 1px solid #1e293b; border-radius: 12px; padding: 20px; max-width: 780px; margin: 0 auto 40px; overflow-x: auto; }
+  .csv-example h2 { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #a78bfa; margin-bottom: 12px; }
+  pre { font-family: 'Consolas', monospace; font-size: 0.72rem; color: #94a3b8; line-height: 1.7; white-space: pre; }
+  .csv-header { color: #818cf8; }
+  .csv-row    { color: #cbd5e1; }
+
+  /* ── API RESPONSE ── */
+  .api-box { background: #0a1628; border: 1px solid #1e3a5f; border-radius: 12px; padding: 20px; max-width: 780px; margin: 0 auto; }
+  .api-box h2 { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #60a5fa; margin-bottom: 12px; }
+  .api-json { font-family: 'Consolas', monospace; font-size: 0.8rem; background: #0f172a; padding: 14px; border-radius: 8px; color: #86efac; line-height: 1.8; }
+  .json-key { color: #93c5fd; }
+  .json-num { color: #fbbf24; }
+
+  @media (max-width: 540px) {
+    .modes { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<h1>📥 Importação em Lote via CSV</h1>
+<p class="subtitle">Como funciona o upload de questões no StudyBase — guia completo</p>
+
+<!-- ══ FLUXO ══ -->
+<div class="flow">
+
+  <div class="step">
+    <div class="step-num green">📁</div>
+    <div class="step-body">
+      <div class="step-title">1 — Você prepara o arquivo CSV</div>
+      <div class="step-desc">
+        Um arquivo de texto com colunas separadas por vírgula. Pode ser criado no Excel, Google Sheets ou qualquer editor de texto.<br><br>
+        <strong>Colunas obrigatórias:</strong> pergunta, opcaoA, opcaoB, opcaoC, opcaoD, correta<br>
+        <strong>Colunas opcionais:</strong> explicacao, dificuldade, tags
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num teal">🖥️</div>
+    <div class="step-body">
+      <div class="step-title">2 — Você abre o tópico no admin e clica em "⬆ CSV"</div>
+      <div class="step-desc">
+        Dentro de <strong>/admin/materias/[slug]</strong>, seleciona um bloco e um tópico. Na seção de questões, o botão <strong>⬆ CSV</strong> abre um modal com um campo de texto onde você cola o conteúdo do arquivo.
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num amber">👁️</div>
+    <div class="step-body">
+      <div class="step-title">3 — O sistema faz uma pré-visualização</div>
+      <div class="step-desc">
+        Ao colar o CSV, o código em JavaScript faz o parse localmente (no seu navegador) e exibe uma tabela de prévia com todas as questões detectadas, marcando em vermelho as linhas com erro antes de enviar qualquer coisa.
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num violet">☑️</div>
+    <div class="step-body">
+      <div class="step-title">4 — Você escolhe o modo: Adicionar ou Substituir</div>
+      <div class="step-desc">
+        Há um checkbox <strong>"Substituir todas as questões existentes"</strong>.<br>
+        • <strong>Desmarcado (padrão):</strong> as questões novas são adicionadas às existentes.<br>
+        • <strong>Marcado:</strong> todas as questões do tópico são apagadas antes de inserir as novas — ideal para re-importar uma versão atualizada do CSV sem duplicar.
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <div class="step-num green">🚀</div>
+    <div class="step-body">
+      <div class="step-title">5 — Clica em "Importar" e o banco é atualizado</div>
+      <div class="step-desc">
+        O front-end envia um <code>POST /api/admin/quiz/import</code> com as questões já parseadas. A API cria cada questão com suas 4 opções no banco (MySQL/MariaDB via Prisma) e retorna o resultado: quantas foram criadas, quantas foram apagadas, e se houve algum erro por linha.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ══ COLUNAS CSV ══ -->
+<div class="csv-box">
+  <h2>📋 Colunas do CSV e seus valores</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Coluna</th>
+        <th>Obrigatória?</th>
+        <th>Valores aceitos</th>
+        <th>Descrição</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>pergunta</code></td>
+        <td class="required">✅ Sim</td>
+        <td class="values">Qualquer texto</td>
+        <td>Enunciado completo da questão</td>
+      </tr>
+      <tr>
+        <td><code>opcaoA</code></td>
+        <td class="required">✅ Sim</td>
+        <td class="values">Qualquer texto</td>
+        <td>Texto da alternativa A</td>
+      </tr>
+      <tr>
+        <td><code>opcaoB</code></td>
+        <td class="required">✅ Sim</td>
+        <td class="values">Qualquer texto</td>
+        <td>Texto da alternativa B</td>
+      </tr>
+      <tr>
+        <td><code>opcaoC</code></td>
+        <td class="required">✅ Sim</td>
+        <td class="values">Qualquer texto</td>
+        <td>Texto da alternativa C</td>
+      </tr>
+      <tr>
+        <td><code>opcaoD</code></td>
+        <td class="required">✅ Sim</td>
+        <td class="values">Qualquer texto</td>
+        <td>Texto da alternativa D</td>
+      </tr>
+      <tr>
+        <td><code>correta</code></td>
+        <td class="required">✅ Sim</td>
+        <td class="values">A, B, C ou D</td>
+        <td>Letra da alternativa correta (maiúscula ou minúscula)</td>
+      </tr>
+      <tr>
+        <td><code>explicacao</code></td>
+        <td class="optional">⬜ Opcional</td>
+        <td class="values">Qualquer texto</td>
+        <td>Justificativa exibida ao aluno após responder</td>
+      </tr>
+      <tr>
+        <td><code>dificuldade</code></td>
+        <td class="optional">⬜ Opcional</td>
+        <td class="values">FACIL, MEDIO ou DIFICIL</td>
+        <td>Nível da questão. Se omitido ou inválido, assume <code>MEDIO</code></td>
+      </tr>
+      <tr>
+        <td><code>tags</code></td>
+        <td class="optional">⬜ Opcional</td>
+        <td class="values">tag1,tag2,tag3</td>
+        <td>Tags separadas por vírgula para filtro futuro</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ══ MODOS ══ -->
+<div class="modes">
+  <div class="mode-card green">
+    <h3>➕ Modo: Adicionar (padrão)</h3>
+    <p>
+      Checkbox <strong>desmarcado</strong>.<br><br>
+      As questões do CSV são <strong>adicionadas</strong> às que já existem no tópico. Útil para complementar um tópico com questões extras sem apagar nada.
+    </p>
+  </div>
+  <div class="mode-card amber">
+    <h3>🔄 Modo: Substituir tudo</h3>
+    <p>
+      Checkbox <strong>marcado</strong> — botão fica âmbar como aviso.<br><br>
+      O sistema <strong>apaga todas</strong> as questões existentes do tópico e insere as do CSV do zero. Ideal para re-importar uma versão revisada do arquivo sem criar duplicatas.
+    </p>
+  </div>
+</div>
+
+<!-- ══ AVISO ══ -->
+<div class="tip">
+  <div class="tip-icon">⚠️</div>
+  <div>
+    <strong>Atenção ao usar "Substituir tudo":</strong> a exclusão é em cascata — apaga as questões <em>e</em> todas as respostas dos alunos vinculadas a elas. Use no modo de preparação do conteúdo, antes de liberar o tópico para os alunos.
+  </div>
+</div>
+
+<!-- ══ EXEMPLO CSV ══ -->
+<div class="csv-example">
+  <h2>✏️ Exemplo real de CSV</h2>
+<pre><span class="csv-header">pergunta,opcaoA,opcaoB,opcaoC,opcaoD,correta,explicacao,dificuldade,tags</span>
+<span class="csv-row">"Qual órgão regula o sistema financeiro nacional?","Banco do Brasil","Banco Central","CEF","Bradesco","B","O Bacen é o órgão executor da política monetária.","FACIL","SFN,Bacen"</span>
+<span class="csv-row">"O CMN é composto por quantos membros?","2","3","4","5","B","O CMN tem 3 membros: Ministro da Fazenda, Planejamento e Presidente do Bacen.","MEDIO","CMN,SFN"</span>
+<span class="csv-row">"A CVM regula qual mercado?","Cambial","Monetário","Capitais","Crédito","C","A CVM fiscaliza o mercado de capitais e valores mobiliários.","FACIL","CVM,MercadoCapitais"</span></pre>
+</div>
+
+<!-- ══ RESPOSTA DA API ══ -->
+<div class="api-box">
+  <h2>📡 O que a API retorna após a importação</h2>
+  <div class="api-json">
+{<br>
+&nbsp;&nbsp;<span class="json-key">"criadas"</span>: <span class="json-num">83</span>,&nbsp;&nbsp;&nbsp;<span style="color:#4b5563">// questões inseridas com sucesso</span><br>
+&nbsp;&nbsp;<span class="json-key">"apagadas"</span>: <span class="json-num">42</span>,&nbsp;&nbsp;<span style="color:#4b5563">// questões removidas (modo substituir)</span><br>
+&nbsp;&nbsp;<span class="json-key">"erros"</span>: []&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span style="color:#4b5563">// linhas que falharam (ex: "correta" inválida)</span><br>
+}
+  </div>
+</div>
+
+</body>
+</html>

@@ -116,21 +116,36 @@ export default function AdminSidebar() {
           </p>
           <div className="space-y-0.5">
             {materias.map((m) => {
-              const href = `/admin/materias/${m.slug}`;
+              const href       = `/admin/materias/${m.slug}`;
+              const hrefImport = `/admin/materias/${m.slug}/importar`;
               const active = pathname.startsWith(href);
               return (
-                <Link
-                  key={m.id}
-                  href={href}
-                  className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-colors truncate ${
-                    active
-                      ? "bg-emerald-500/15 text-emerald-300"
-                      : "text-gray-500 hover:text-gray-200 hover:bg-gray-800"
-                  }`}
-                >
-                  <span>{m.icone ?? "📚"}</span>
-                  <span className="truncate">{m.nome}</span>
-                </Link>
+                <div key={m.id} className={`rounded-lg transition-colors ${active ? "bg-emerald-500/10" : ""}`}>
+                  <div className="flex items-center gap-1">
+                    <Link
+                      href={href}
+                      className={`flex items-center gap-2 flex-1 px-3 py-1.5 text-xs transition-colors truncate ${
+                        active
+                          ? "text-emerald-300"
+                          : "text-gray-500 hover:text-gray-200"
+                      }`}
+                    >
+                      <span>{m.icone ?? "📚"}</span>
+                      <span className="truncate">{m.nome}</span>
+                    </Link>
+                    <Link
+                      href={hrefImport}
+                      title="Importar CSV"
+                      className={`shrink-0 w-6 h-6 flex items-center justify-center rounded text-[10px] mr-1 transition-colors ${
+                        pathname === hrefImport
+                          ? "bg-amber-500/20 text-amber-300"
+                          : "text-gray-700 hover:text-amber-400 hover:bg-amber-500/10"
+                      }`}
+                    >
+                      📥
+                    </Link>
+                  </div>
+                </div>
               );
             })}
           </div>

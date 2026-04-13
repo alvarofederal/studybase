@@ -543,6 +543,13 @@ export default function MateriaDetailPage() {
               🃏 Flashcards
             </Link>
             <Link
+              href={`/admin/materias/${materia.slug}/importar`}
+              className="text-xs px-3 py-1.5 rounded-xl bg-amber-600/20 border border-amber-500/30 text-amber-300 hover:bg-amber-600/30 transition-colors font-semibold"
+              title="Importação em lote via CSV (questões + flashcards)"
+            >
+              📥 Importar CSV
+            </Link>
+            <Link
               href={`/estudo/${materia.slug}`}
               target="_blank"
               className="text-xs px-3 py-1.5 rounded-xl bg-gray-800 text-gray-400 hover:text-gray-200 transition-colors"
