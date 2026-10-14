@@ -24,7 +24,8 @@
     "typecheck": "tsc --noEmit",
     "db:seed:lp": "node prisma/seed-lingua-portuguesa.mjs",
     "db:seed:lgpd": "node prisma/seed-lgpd.mjs",
-    "db:seed:rl2": "node prisma/seed-rl-ampliacao.mjs"
+    "db:seed:rl2": "node prisma/seed-rl-ampliacao.mjs",
+    "db:seed:extras": "node prisma/seed-extras.mjs"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

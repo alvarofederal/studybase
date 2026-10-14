@@ -58,9 +58,9 @@ Isso ocorre porque o dinheiro presente pode ser investido e gerar rendimento. Es
 
 ## Fórmula dos Juros Simples
 
-$$J = C \times i \times n$$
+> \`J = C × i × n\`
 
-$$M = C + J = C \times (1 + i \times n)$$
+> \`M = C + J = C × (1 + i × n)\`
 
 **Exemplo**: R$ 5.000 aplicados por 6 meses a 3% ao mês.
 - J = 5.000 × 0,03 × 6 = **R$ 900**
@@ -106,9 +106,9 @@ A partir de M = C × (1 + i × n), é possível isolar qualquer variável:
 
 O desconto é calculado sobre o **valor nominal (futuro)**. É o mais usado pelos bancos.
 
-$$D_c = N \times d \times n$$
+> \`D_c = N × d × n\`
 
-$$PV = N \times (1 - d \times n)$$
+> \`PV = N × (1 - d × n)\`
 
 Onde **d** é a taxa de desconto (não confundir com taxa de juros i).
 
@@ -120,9 +120,9 @@ Onde **d** é a taxa de desconto (não confundir com taxa de juros i).
 
 O desconto é calculado sobre o **valor atual (presente)**. Equivale a calcular os juros que o valor atual renderia até o vencimento.
 
-$$D_r = N - PV$$
+> \`D_r = N - PV\`
 
-$$PV = \frac{N}{1 + i \times n}$$
+> \`PV = N ÷ (1 + i × n)\`
 
 **Exemplo**: Mesmo título (R$ 10.000, 3 meses, 2% ao mês).
 - PV = 10.000 ÷ (1 + 0,02 × 3) = 10.000 ÷ 1,06 = **R$ 9.433,96**
@@ -164,7 +164,7 @@ No regime **composto**, os juros de cada período são incorporados ao capital �
 
 ## Fórmula Fundamental
 
-$$M = C \times (1 + i)^n$$
+> \`M = C × (1 + i)^n\`
 
 | Variável | Significado |
 |----------|-------------|
@@ -186,7 +186,7 @@ Duas taxas são **equivalentes** quando, aplicadas a um mesmo capital pelo mesmo
 
 No regime composto, equivalência é por **potenciação**:
 
-$$(1 + i_{mensal})^{12} = (1 + i_{anual})$$
+> \`(1 + i_(mensal))^(12) = (1 + i_(anual))\`
 
 **Exemplo**: Qual é a taxa anual equivalente a 1% ao mês?
 
@@ -195,7 +195,7 @@ $$(1 + i_{mensal})^{12} = (1 + i_{anual})$$
 
 ### Fórmula geral de equivalência
 
-$$i_1 = (1 + i_2)^{n_1/n_2} - 1$$
+> \`i_1 = (1 + i_2)^(n_1/n_2) - 1\`
 
 Onde n₁ e n₂ são os períodos das taxas que se quer converter.
 
@@ -254,7 +254,7 @@ A **taxa aparente** (ou taxa nominal com inflação) é a que observamos no merc
 
 ### Fórmula de Fisher
 
-$$(1 + i) = (1 + r) \times (1 + \pi)$$
+> \`(1 + i) = (1 + r) × (1 + π)\`
 
 Onde:
 - **i** = taxa aparente (nominal)
@@ -263,7 +263,7 @@ Onde:
 
 **Isolando a taxa real:**
 
-$$r = \frac{(1 + i)}{(1 + \pi)} - 1$$
+> \`r = (1 + i) ÷ (1 + π) - 1\`
 
 **Exemplo**: Aplicação rende 10% ao ano; inflação foi 4% ao ano.
 - r = (1,10 ÷ 1,04) − 1 = 1,0577 − 1 = **5,77% ao ano (taxa real)**
@@ -309,7 +309,7 @@ Não precisa ser anual — pode ser mensal, trimestral etc. O nome é histórico
 
 Responde: **quanto vale hoje** uma série de pagamentos futuros?
 
-$$VP = PMT \times \frac{1 - (1 + i)^{-n}}{i}$$
+> \`VP = PMT × (1 - (1 + i)^(-n)) ÷ i\`
 
 Onde:
 - **PMT** = valor de cada parcela
@@ -318,17 +318,17 @@ Onde:
 
 **Exemplo**: Financiamento de 12 parcelas de R$ 1.000 a 2% ao mês. Qual o valor à vista?
 
-$$VP = 1.000 \times \frac{1 - (1,02)^{-12}}{0,02} = 1.000 \times 10,5753 = \textbf{R\$ 10.575,30}$$
+> \`VP = 1.000 × (1 - (1,02)^(-12)) ÷ 0,02 = 1.000 × 10,5753 = R\$ 10.575,30\`
 
 ## Valor Futuro de uma Série (VF)
 
 Responde: **quanto se acumula** fazendo depósitos regulares ao longo do tempo?
 
-$$VF = PMT \times \frac{(1 + i)^n - 1}{i}$$
+> \`VF = PMT × ((1 + i)^n - 1) ÷ i\`
 
 **Exemplo**: Depósitos mensais de R$ 500 por 24 meses a 0,8% ao mês.
 
-$$VF = 500 \times \frac{(1,008)^{24} - 1}{0,008} = 500 \times 26,03 = \textbf{R\$ 13.015,00}$$
+> \`VF = 500 × ((1,008)^(24) - 1) ÷ 0,008 = 500 × 26,03 = R\$ 13.015,00\`
 
 ## Dica: HP-12C
 
@@ -371,13 +371,13 @@ Insira 4 variáveis e calcule a 5ª. Para anuidade antecipada: ative o modo **BE
 
 ## Fórmulas
 
-$$A = \frac{C}{n}$$
+> \`A = C ÷ n\`
 
-$$J_k = SD_{k-1} \times i$$
+> \`J_k = SD_(k-1) × i\`
 
-$$Prestação_k = A + J_k$$
+> \`Prestação_k = A + J_k\`
 
-$$SD_k = SD_{k-1} - A$$
+> \`SD_k = SD_(k-1) - A\`
 
 Onde:
 - **A** = amortização constante
@@ -425,11 +425,11 @@ Financiamento de R$ 12.000 em 4 parcelas mensais, taxa 2% ao mês.
 
 ## Fórmula da Prestação Constante
 
-$$PMT = C \times \frac{i \times (1 + i)^n}{(1 + i)^n - 1}$$
+> \`PMT = C × (i × (1 + i)^n) ÷ ((1 + i)^n - 1)\`
 
 Ou usando o fator da tabela Price (**FC**):
 
-$$PMT = C \times FC(i, n)$$
+> \`PMT = C × FC(i, n)\`
 
 ## Lógica de cada linha da tabela
 
@@ -489,7 +489,7 @@ PMT = 12.000 × [0,02 × (1,02)⁴] ÷ [(1,02)⁴ − 1] = **R$ 3.192,95**
 
 **Conceito**: traz todos os fluxos de caixa futuros a valor presente, utilizando a taxa mínima de atratividade (TMA), e subtrai o investimento inicial.
 
-$$VPL = -I_0 + \sum_{t=1}^{n} \frac{FC_t}{(1+TMA)^t}$$
+> \`VPL = -I_0 + Σ[t=1 até n] FC_t ÷ ((1+TMA)^t)\`
 
 ### Regra de decisão
 
@@ -524,7 +524,7 @@ Como VPL < 0: **rejeitar**. (Por pouquíssimo — se a TMA fosse 9,9% seria viá
 
 Tempo necessário para recuperar o investimento inicial, sem considerar o valor do dinheiro no tempo.
 
-$$Payback = \frac{I_0}{FC_{médio}}$$
+> \`Payback = I_0 ÷ (FC_(médio))\`
 
 **Exemplo**: Investimento de R$ 12.000, fluxo de caixa de R$ 3.000/ano.
 - Payback = 12.000 ÷ 3.000 = **4 anos**
@@ -552,7 +552,7 @@ Igual ao payback simples, mas os fluxos futuros são trazidos a valor presente a
 
 Muito cobrado em provas de concurso bancário. Um título com **valor de face (F)** descontado a uma taxa **d** por **n** períodos:
 
-$$PV = F \times (1 - d \times n)$$
+> \`PV = F × (1 - d × n)\`
 
 **Exemplo**: Cheque de R$ 5.000 descontado no banco 45 dias antes do vencimento. Taxa de desconto: 3% ao mês (considerando mês de 30 dias → n = 45/30 = 1,5 mês).
 
@@ -564,7 +564,7 @@ O banco antecipa R$ 4.775 e fica com R$ 225 de desconto.
 
 O desconto comercial gera uma **taxa de juros efetiva** diferente da taxa de desconto declarada — e sempre maior.
 
-$$i = \frac{d}{1 - d \times n}$$
+> \`i = d ÷ (1 - d × n)\`
 
 **Exemplo**: d = 3% ao mês, n = 1 mês.
 - i = 0,03 ÷ (1 − 0,03 × 1) = 0,03 ÷ 0,97 = **3,093% ao mês**
@@ -591,7 +591,7 @@ A taxa de juros efetiva (3,093%) é maior que a taxa de desconto (3%).
 
 ### Aplicando a Inflação: Fórmula de Fisher
 
-$$r = \frac{(1 + i)}{(1 + \pi)} - 1$$
+> \`r = (1 + i) ÷ (1 + π) - 1\`
 
 **Exemplo**: Poupança rendeu 6% ao ano; IPCA foi 4,5%.
 - r = (1,06 ÷ 1,045) − 1 = 1,01435 − 1 = **1,435% ao ano (taxa real)**

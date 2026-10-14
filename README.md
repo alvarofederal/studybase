@@ -26,6 +26,7 @@ npm run dev
 | `npm run typecheck` · `npm run lint` | TypeScript e ESLint |
 | `npm run db:push` | aplica o schema (**sem** `--accept-data-loss`: mudanças destrutivas pedem confirmação) |
 | `npm run db:seed:*` | seeds de conteúdo por matéria (kb, da, mf, rl, **lp** = Língua Portuguesa, **lgpd**, **rl2** = ampliação de Raciocínio Lógico). Os seeds novos aceitam `--dry` (só valida) e são idempotentes; ver `prisma/lib/seed-materia.mjs` |
+| `npm run db:seed:extras` | acrescenta questões e flashcards (`prisma/extras/<matéria>/*.mjs`) a tópicos existentes, sem apagar nada e sem duplicar; `-- --materia=<slug>` e `-- --dry` disponíveis |
 | `node prisma/import-*.mjs` | importa os CSVs de `dados/` |
 
 ## Segurança
