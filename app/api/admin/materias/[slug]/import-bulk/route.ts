@@ -1,20 +1,21 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth/session";
+import { montarOpcoes } from "@/lib/study/montar-quiz";
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 type Dificuldade = "FACIL" | "MEDIO" | "DIFICIL";
 const DIFICULDADES: Dificuldade[] = ["FACIL", "MEDIO", "DIFICIL"];
-const LETRAS = ["A", "B", "C", "D"] as const;
 
 interface QuestaoRow {
   bloco:       string;
   topico:      string;
+  tipo?:       string;   // "CE" = Certo/Errado (opcaoA-D vazias, correta = C|E); omitido = múltipla escolha
   pergunta:    string;
-  opcaoA:      string;
-  opcaoB:      string;
-  opcaoC:      string;
-  opcaoD:      string;
+  opcaoA?:     string;
+  opcaoB?:     string;
+  opcaoC?:     string;
+  opcaoD?:     string;
   correta:     string;
   explicacao?: string;
   dificuldade?: string;
@@ -124,11 +125,9 @@ export async function POST(
     const res = resolveTopico(q.bloco, q.topico);
     if (res.erro) { errosQ.push(`Questão ${i + 1}: ${res.erro}`); continue; }
 
-    const idxCorreta = LETRAS.indexOf(
-      (q.correta ?? "").trim().toUpperCase() as typeof LETRAS[number]
-    );
-    if (idxCorreta === -1) {
-      errosQ.push(`Questão ${i + 1}: campo "correta" deve ser A, B, C ou D`);
+    const montado = montarOpcoes(q);
+    if ("erro" in montado) {
+      errosQ.push(`Questão ${i + 1}: ${montado.erro}`);
       continue;
     }
 
@@ -138,16 +137,13 @@ export async function POST(
         data: {
           pergunta:    q.pergunta.trim(),
           explicacao:  q.explicacao?.trim() || null,
+          tipo:        montado.tipo,
           dificuldade: normalizeDific(q.dificuldade),
           tags:        q.tags?.trim() || null,
           ordem:       substituir ? i : ordemBase,
           topicoId:    res.topicoId!,
           opcoes: {
-            create: [q.opcaoA, q.opcaoB, q.opcaoC, q.opcaoD].map((texto, oi) => ({
-              texto:   texto.trim(),
-              correta: oi === idxCorreta,
-              ordem:   oi,
-            })),
+            create: montado.opcoes,
           },
         },
       });

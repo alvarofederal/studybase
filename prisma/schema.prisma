@@ -81,6 +81,8 @@ model Quiz {
   id          String      @id @default(cuid())
   pergunta    String      @db.Text
   explicacao  String?     @db.Text
+  tipo        TipoQuiz    @default(MULTIPLA)
+  origemId    String?     // preenchido em itens CE derivados de uma múltipla escolha (só aparecem no simulado)
   dificuldade Dificuldade @default(MEDIO)
   tags        String?     @db.Text  // valores separados por vírgula: "SFN,Regulação,Mercado"
   ordem       Int         @default(0)
@@ -94,6 +96,12 @@ model Quiz {
   historicos HistoricoRespostaQuiz[]
 
   @@map("quizzes")
+}
+
+// MULTIPLA = 4 alternativas; CERTO_ERRADO = estilo CEBRASPE (assertiva + opções "Certo"/"Errado")
+enum TipoQuiz {
+  MULTIPLA
+  CERTO_ERRADO
 }
 
 enum Dificuldade {

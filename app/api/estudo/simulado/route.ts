@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth/session";
 import { materiasAtivasIds } from "@/lib/study/painel";
+import { pontuarCebraspe } from "@/lib/study/cebraspe";
 import { corrigir, embaralhar, type RespostaSimulado } from "@/lib/study/simulado";
 
 export const dynamic = "force-dynamic";
 
 /**
- * GET /api/estudo/simulado?materia=<slug|todas>&n=20&modo=aleatorio|erros
+ * GET /api/estudo/simulado?materia=<slug|todas>&n=20&modo=aleatorio|erros&tipo=todos|ce|multipla
  * Devolve as questões SEM o gabarito.
  */
 export async function GET(req: NextRequest) {
@@ -18,6 +19,8 @@ export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const slug = sp.get("materia");
   const modo = sp.get("modo") === "erros" ? "erros" : "aleatorio";
+  const tipoParam = sp.get("tipo");
+  const tipo = tipoParam === "ce" ? "CERTO_ERRADO" : tipoParam === "multipla" ? "MULTIPLA" : undefined;
   const n = Math.min(Math.max(parseInt(sp.get("n") ?? "20", 10) || 20, 1), 100);
 
   let ids = await materiasAtivasIds(userId);
@@ -31,6 +34,7 @@ export async function GET(req: NextRequest) {
   const candidatas = await prisma.quiz.findMany({
     where: {
       topico: escopo,
+      ...(tipo ? { tipo } : {}),
       ...(modo === "erros" ? { respostas: { some: { userId, correta: false } } } : {}),
     },
     select: { id: true },
@@ -42,6 +46,7 @@ export async function GET(req: NextRequest) {
     select: {
       id: true,
       pergunta: true,
+      tipo: true,
       dificuldade: true,
       topico: { select: { titulo: true, bloco: { select: { materia: { select: { nome: true } } } } } },
       opcoes: { orderBy: { ordem: "asc" }, select: { id: true, texto: true } },
@@ -52,6 +57,7 @@ export async function GET(req: NextRequest) {
     questoes: embaralhar(questoes).map((q) => ({
       id: q.id,
       pergunta: q.pergunta,
+      tipo: q.tipo,
       dificuldade: q.dificuldade,
       topico: q.topico.titulo,
       materia: q.topico.bloco.materia.nome,
@@ -69,7 +75,10 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
   const userId = session.sub;
 
-  const { respostas } = (await req.json().catch(() => ({}))) as { respostas?: RespostaSimulado[] };
+  const { respostas, valorItem } = (await req.json().catch(() => ({}))) as {
+    respostas?: RespostaSimulado[];
+    valorItem?: number;
+  };
   if (!Array.isArray(respostas) || !respostas.length || respostas.length > 100) {
     return NextResponse.json({ error: "Respostas inválidas." }, { status: 400 });
   }
@@ -83,6 +92,7 @@ export async function POST(req: NextRequest) {
     select: {
       id: true,
       pergunta: true,
+      tipo: true,
       explicacao: true,
       topicoId: true,
       topico: { select: { titulo: true } },
@@ -135,13 +145,33 @@ export async function POST(req: NextRequest) {
   }
 
   const info = new Map(quizzes.map((q) => [q.id, q]));
+
+  // Pontuação CEBRASPE (erro anula acerto) sobre os itens Certo/Errado do simulado.
+  const itensCE = resultado.itens.filter((i) => info.get(i.quizId)?.tipo === "CERTO_ERRADO");
+  const valor = Math.min(Math.max(Number(valorItem) || 1, 0.5), 10);
+  const cebraspe = itensCE.length
+    ? pontuarCebraspe(
+        itensCE.map((i) => {
+          const escolhida = info.get(i.quizId)!.opcoes.find((o) => o.id === i.opcaoEscolhida);
+          return {
+            correta: i.correta,
+            emBranco: i.emBranco,
+            marcouErrado: escolhida?.texto === "Errado",
+          };
+        }),
+        valor,
+      )
+    : null;
+
   return NextResponse.json({
     ...resultado,
+    cebraspe,
     itens: resultado.itens.map((i) => {
       const q = info.get(i.quizId)!;
       return {
         ...i,
         pergunta: q.pergunta,
+        tipo: q.tipo,
         topico: q.topico.titulo,
         explicacao: q.explicacao,
         opcoes: q.opcoes.map((o) => ({ id: o.id, texto: o.texto })),

@@ -23,6 +23,8 @@ export async function getMateriaData(slug: string): Promise<Materia | null> {
               orderBy: { ordem: "asc" },
               include: {
                 quizzes: {
+                  // itens CE derivados servem só ao simulado; não entram na aprovação do tópico
+                  where: { origemId: null },
                   orderBy: { ordem: "asc" },
                   include: { opcoes: { orderBy: { ordem: "asc" } } },
                 },
@@ -56,6 +58,8 @@ export async function getAllMateriasData(): Promise<Materia[]> {
               orderBy: { ordem: "asc" },
               include: {
                 quizzes: {
+                  // itens CE derivados servem só ao simulado; não entram na aprovação do tópico
+                  where: { origemId: null },
                   orderBy: { ordem: "asc" },
                   include: { opcoes: { orderBy: { ordem: "asc" } } },
                 },

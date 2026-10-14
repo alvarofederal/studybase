@@ -32,6 +32,7 @@ User   id, nome, email, senha(bcrypt), role(ADMIN|USER), ativo, metaDiaria(@defa
   ├─ PasswordResetToken  id, tokenHash, userId, expiresAt, usado
   ├─ UserMateria         id, userId, materiaId, expiresAt(nullable)  @@unique([userId,materiaId])
   ├─ SolicitacaoMateria  id, userId, materiaId, status(PENDENTE|APROVADA|REJEITADA)  @@unique([userId,materiaId])
+  │   (Quiz.tipo = MULTIPLA | CERTO_ERRADO; CE = assertiva em `pergunta` + opções Certo/Errado; Quiz.origemId ≠ null = item CE derivado, só no simulado)
   ├─ RespostaQuiz          id, userId, quizId, opcaoId, correta(bool), topicoId  @@unique([userId,quizId])
   ├─ HistoricoRespostaQuiz id, userId, quizId, opcaoId, correta(bool), topicoId, tentativa(Int)
   └─ RevisaoFlashcard      id, userId, flashcardId, acertou(bool), topicoId     @@unique([userId,flashcardId])
@@ -60,8 +61,8 @@ DELETE /api/estudo/revogar           { materiaId }
 POST   /api/estudo/responder-quiz    { quizId, opcaoId } — servidor decide `correta`/`topicoId` e valida acesso; upsert + histórico (transação)
 DELETE /api/estudo/responder-quiz    { quizId } — remove última resposta para nova tentativa (histórico preservado)
 POST   /api/estudo/revisar-flashcard { flashcardId, acertou } — grava e agenda próxima revisão (SM-2, lib/study/sm2.ts)
-GET    /api/estudo/simulado          ?materia=<slug|todas>&n=20&modo=aleatorio|erros — questões SEM gabarito
-POST   /api/estudo/simulado          { respostas:[{quizId,opcaoId|null}] } — corrige no servidor, grava histórico, devolve gabarito
+GET    /api/estudo/simulado          ?materia=<slug|todas>&n=20&modo=aleatorio|erros&tipo=todos|ce|multipla — questões SEM gabarito
+POST   /api/estudo/simulado          { respostas:[{quizId,opcaoId|null}], valorItem? } — corrige no servidor, grava histórico, devolve gabarito + `cebraspe` (saldo = acertos − erros, pureza/taxa da caça)
 PATCH  /api/estudo/preferencias      { metaDiaria?, dataProva? }
 DELETE /api/estudo/reset-topico      { topicoId, tipo:'quiz'|'flashcard' } — reset em lote
 ```
@@ -165,3 +166,12 @@ prisma db push       rodar localmente — requer binários de rede
 - **Bloqueio progressivo:** para acessar Bloco N, todos os tópicos do Bloco N-1 precisam de ≥90% em Quiz **e** ≥90% em Flashcards
 - Tópico sem quiz/flashcard é auto-concluído
 - Progresso (RespostaQuiz + RevisaoFlashcard) é persistido no banco, upsert por usuário+item
+
+---
+
+## Estilo CEBRASPE (Certo/Errado)
+
+- `Quiz.tipo = CERTO_ERRADO`: a `pergunta` é a assertiva; opções fixas "Certo" (ordem 0) e "Errado" (ordem 1).
+- **Importação (CSV em lote):** coluna `tipo = CE`, `opcaoA..D` vazias, `correta = C|E`. Sem alternativas preenchidas também vale como CE. O backup JSON preserva `tipo`.
+- **Pontuação** (`lib/study/cebraspe.ts`): erro anula acerto, branco = 0; `valorItem` configurável (CGU P3 = 2). Mede ainda **pureza da caça** (≥95% confiável · 85–94% apertar · <85% prejudicando) e **taxa de caça** (alvo 20–40%).
+- `node prisma/derivar-ce.mjs [--apply] [--materia=slug]` gera 2 assertivas (1 certa, 1 errada) por múltipla escolha; ficam com `origemId` e tag `CE-derivada`.

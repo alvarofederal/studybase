@@ -6,6 +6,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 interface Questao {
   id: string;
   pergunta: string;
+  tipo: "MULTIPLA" | "CERTO_ERRADO";
   dificuldade: string;
   topico: string;
   materia: string;
@@ -22,7 +23,22 @@ interface ItemResultado {
   correta: boolean;
   emBranco: boolean;
 }
+interface Cebraspe {
+  total: number;
+  acertos: number;
+  erros: number;
+  emBranco: number;
+  saldo: number;
+  maximo: number;
+  caçadas: number;
+  caçadasCorretas: number;
+  pureza: number | null;
+  taxaCaca: number;
+  termometro: "ok" | "severo" | "superficial";
+  veredito: "confiavel" | "apertar" | "prejudicando" | null;
+}
 interface Resultado {
+  cebraspe: Cebraspe | null;
   total: number;
   acertos: number;
   erros: number;
@@ -44,6 +60,8 @@ export default function SimuladoCliente({
   const [fase, setFase] = useState<"config" | "prova" | "resultado">("config");
   const [materia, setMateria] = useState("todas");
   const [modo, setModo] = useState(modoInicial);
+  const [tipo, setTipo] = useState<"ce" | "multipla" | "todos">(modoInicial === "erros" ? "todos" : "ce");
+  const [valorItem, setValorItem] = useState(1);
   const [n, setN] = useState(20);
   const [minutos, setMinutos] = useState(30);
   const [questoes, setQuestoes] = useState<Questao[]>([]);
@@ -59,11 +77,17 @@ export default function SimuladoCliente({
     setCarregando(true);
     setErro(null);
     try {
-      const res = await fetch(`/api/estudo/simulado?materia=${materia}&n=${n}&modo=${modo}`);
+      const res = await fetch(`/api/estudo/simulado?materia=${materia}&n=${n}&modo=${modo}&tipo=${tipo}`);
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Erro ao carregar.");
       if (!data.questoes.length) {
-        setErro(modo === "erros" ? "Você não tem erros em aberto nessa seleção. 👏" : "Nenhuma questão disponível.");
+        setErro(
+          modo === "erros"
+            ? "Você não tem erros em aberto nessa seleção. 👏"
+            : tipo === "ce"
+              ? "Ainda não há itens Certo/Errado nessa matéria. Importe pelo admin (tipo = CE) ou escolha outro estilo."
+              : "Nenhuma questão disponível.",
+        );
         return;
       }
       enviado.current = false;
@@ -89,6 +113,7 @@ export default function SimuladoCliente({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           respostas: questoes.map((q) => ({ quizId: q.id, opcaoId: respostas[q.id] ?? null })),
+          valorItem,
         }),
       });
       const data = await res.json();
@@ -108,6 +133,27 @@ export default function SimuladoCliente({
     const t = setInterval(() => setRestante((r) => r - 1), 1000);
     return () => clearInterval(t);
   }, [fase]);
+
+  // Atalhos: C = Certo · E = Errado · B/Backspace = branco · setas = navegar
+  useEffect(() => {
+    if (fase !== "prova") return;
+    function onKey(ev: KeyboardEvent) {
+      const alvo = ev.target as HTMLElement;
+      if (alvo?.tagName === "INPUT" || alvo?.tagName === "SELECT" || alvo?.tagName === "TEXTAREA") return;
+      const q = questoes[atual];
+      if (!q) return;
+      const k = ev.key.toLowerCase();
+      if (q.tipo === "CERTO_ERRADO" && (k === "c" || k === "e")) {
+        const o = q.opcoes[k === "c" ? 0 : 1];
+        if (o) setRespostas((x) => ({ ...x, [q.id]: o.id }));
+      } else if (k === "b" || k === "backspace") {
+        setRespostas((x) => Object.fromEntries(Object.entries(x).filter(([id]) => id !== q.id)));
+      } else if (k === "arrowright") setAtual((a) => Math.min(a + 1, questoes.length - 1));
+      else if (k === "arrowleft") setAtual((a) => Math.max(a - 1, 0));
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [fase, questoes, atual]);
 
   useEffect(() => {
     if (fase === "prova" && restante <= 0) finalizar();
@@ -129,7 +175,15 @@ export default function SimuladoCliente({
           </select>
         </label>
         <label className="block text-xs text-gray-400">
-          Tipo
+          Estilo
+          <select value={tipo} onChange={(e) => setTipo(e.target.value as "ce" | "multipla" | "todos")} className={campo}>
+            <option value="ce">⚖️ CEBRASPE — Certo/Errado (erro anula acerto)</option>
+            <option value="multipla">Múltipla escolha</option>
+            <option value="todos">Misto</option>
+          </select>
+        </label>
+        <label className="block text-xs text-gray-400">
+          Seleção
           <select value={modo} onChange={(e) => setModo(e.target.value as "aleatorio" | "erros")} className={campo}>
             <option value="aleatorio">Questões aleatórias</option>
             <option value="erros">Só as que errei (caderno de erros)</option>
@@ -144,6 +198,12 @@ export default function SimuladoCliente({
             Tempo (min)
             <input type="number" min={1} max={300} value={minutos} onChange={(e) => setMinutos(Number(e.target.value))} className={campo} />
           </label>
+          {tipo !== "multipla" && (
+            <label className="block text-xs text-gray-400 col-span-2">
+              Valor de cada item Certo/Errado (CGU P3 = 2)
+              <input type="number" min={0.5} max={10} step={0.5} value={valorItem} onChange={(e) => setValorItem(Number(e.target.value))} className={campo} />
+            </label>
+          )}
         </div>
         {erro && <p className="text-sm text-red-400">{erro}</p>}
         <button
@@ -194,6 +254,29 @@ export default function SimuladoCliente({
         <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
           <p className="text-[11px] text-gray-500 mb-2">{q.materia} · {q.topico}</p>
           <p className="text-sm font-medium leading-relaxed">{q.pergunta}</p>
+          {q.tipo === "CERTO_ERRADO" ? (
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              {q.opcoes.map((o, i) => {
+                const marcada = respostas[q.id] === o.id;
+                const certo = i === 0;
+                return (
+                  <button
+                    key={o.id}
+                    onClick={() => setRespostas((x) => ({ ...x, [q.id]: o.id }))}
+                    className={`py-4 rounded-xl border-2 text-base font-black transition-colors ${
+                      marcada
+                        ? certo
+                          ? "border-emerald-400 bg-emerald-500/20 text-emerald-200"
+                          : "border-red-400 bg-red-500/20 text-red-200"
+                        : "border-gray-700 bg-gray-800/40 text-gray-300 hover:border-gray-500"
+                    }`}
+                  >
+                    {o.texto} <span className="text-[10px] font-mono opacity-60">({certo ? "C" : "E"})</span>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
           <div className="mt-4 space-y-2">
             {q.opcoes.map((o) => {
               const marcada = respostas[q.id] === o.id;
@@ -212,6 +295,12 @@ export default function SimuladoCliente({
               );
             })}
           </div>
+          )}
+          {q.tipo === "CERTO_ERRADO" && (
+            <p className="mt-3 text-[11px] text-gray-600">
+              Atalhos: <kbd>C</kbd> certo · <kbd>E</kbd> errado · <kbd>B</kbd> branco · ← → navegar. Cada erro anula um acerto.
+            </p>
+          )}
           {respostas[q.id] && (
             <button
               onClick={() =>
@@ -260,10 +349,71 @@ export default function SimuladoCliente({
   return (
     <div className="space-y-5">
       <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 text-center">
-        <div className="text-5xl font-black text-white">{r.percentual}%</div>
-        <p className="text-sm text-gray-400 mt-1">
-          {r.acertos} acerto{r.acertos !== 1 ? "s" : ""} · {r.erros} erro{r.erros !== 1 ? "s" : ""} · {r.emBranco} em branco
-        </p>
+        {r.cebraspe ? (
+          <>
+            <p className="text-[11px] uppercase tracking-wider text-gray-500 mb-1">Saldo CEBRASPE</p>
+            <div className={`text-5xl font-black ${r.cebraspe.saldo < 0 ? "text-red-400" : "text-white"}`}>
+              {r.cebraspe.saldo}
+              <span className="text-lg text-gray-500 font-semibold"> / {r.cebraspe.maximo}</span>
+            </div>
+            <p className="text-sm text-gray-400 mt-1">
+              {r.cebraspe.acertos} acerto{r.cebraspe.acertos !== 1 ? "s" : ""} − {r.cebraspe.erros} erro
+              {r.cebraspe.erros !== 1 ? "s" : ""} · {r.cebraspe.emBranco} em branco
+            </p>
+            <div className="grid grid-cols-3 gap-2 mt-4 text-left">
+              <div className="bg-gray-800/60 rounded-xl p-3">
+                <p className="text-[10px] text-gray-500 uppercase">Pureza da caça</p>
+                <p className="text-lg font-black text-white">{r.cebraspe.pureza === null ? "—" : `${r.cebraspe.pureza}%`}</p>
+                <p className="text-[10px] text-gray-500">
+                  {r.cebraspe.caçadasCorretas}/{r.cebraspe.caçadas} “Errado” corretos
+                </p>
+              </div>
+              <div className="bg-gray-800/60 rounded-xl p-3">
+                <p className="text-[10px] text-gray-500 uppercase">Taxa de caça</p>
+                <p className="text-lg font-black text-white">{r.cebraspe.taxaCaca}%</p>
+                <p className={`text-[10px] ${r.cebraspe.termometro === "ok" ? "text-emerald-400" : "text-amber-400"}`}>
+                  {r.cebraspe.termometro === "ok"
+                    ? "dentro do esperado (20–40%)"
+                    : r.cebraspe.termometro === "severo"
+                      ? "acima de 40%: severo demais, revise"
+                      : "abaixo de 20%: leitura superficial"}
+                </p>
+              </div>
+              <div className="bg-gray-800/60 rounded-xl p-3">
+                <p className="text-[10px] text-gray-500 uppercase">Veredito</p>
+                <p
+                  className={`text-sm font-black ${
+                    r.cebraspe.veredito === "confiavel"
+                      ? "text-emerald-400"
+                      : r.cebraspe.veredito === "apertar"
+                        ? "text-amber-400"
+                        : r.cebraspe.veredito === "prejudicando"
+                          ? "text-red-400"
+                          : "text-gray-500"
+                  }`}
+                >
+                  {r.cebraspe.veredito === "confiavel"
+                    ? "Confiável (≥95%)"
+                    : r.cebraspe.veredito === "apertar"
+                      ? "Apertar o critério (85–94%)"
+                      : r.cebraspe.veredito === "prejudicando"
+                        ? "Caça prejudicando (<85%)"
+                        : "Sem caça no simulado"}
+                </p>
+              </div>
+            </div>
+            <p className="text-[11px] text-gray-600 mt-3 text-left">
+              Lembrete: incompleto não é errado — só é Errado o item que contradiz a norma.
+            </p>
+          </>
+        ) : (
+          <>
+            <div className="text-5xl font-black text-white">{r.percentual}%</div>
+            <p className="text-sm text-gray-400 mt-1">
+              {r.acertos} acerto{r.acertos !== 1 ? "s" : ""} · {r.erros} erro{r.erros !== 1 ? "s" : ""} · {r.emBranco} em branco
+            </p>
+          </>
+        )}
         <div className="flex gap-3 justify-center mt-4">
           <button onClick={() => { setFase("config"); setResultado(null); }} className="px-4 py-2 rounded-lg bg-violet-600 hover:bg-violet-500 text-sm font-semibold">
             Novo simulado

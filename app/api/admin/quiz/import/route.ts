@@ -1,24 +1,25 @@
 import { NextResponse } from "next/server";
 import { guardaAdmin } from "@/lib/auth/session";
+import { montarOpcoes } from "@/lib/study/montar-quiz";
 import prisma from "@/lib/prisma";
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 type Dificuldade = "FACIL" | "MEDIO" | "DIFICIL";
 
 interface QuestaoImport {
+  tipo?:      string;   // "CE" = Certo/Errado (sem opcaoA-D; correta = C|E)
   pergunta:   string;
-  opcaoA:     string;
-  opcaoB:     string;
-  opcaoC:     string;
-  opcaoD:     string;
-  correta:    "A" | "B" | "C" | "D";
+  opcaoA?:    string;
+  opcaoB?:    string;
+  opcaoC?:    string;
+  opcaoD?:    string;
+  correta:    string;
   explicacao?: string | null;
   dificuldade?: Dificuldade;
   tags?:       string | null;
 }
 
 const DIFICULDADES_VALIDAS: Dificuldade[] = ["FACIL", "MEDIO", "DIFICIL"];
-const LETRAS = ["A", "B", "C", "D"] as const;
 
 function normalizeDificuldade(raw: unknown): Dificuldade {
   if (typeof raw !== "string") return "MEDIO";
@@ -67,24 +68,20 @@ export async function POST(request: Request) {
     // Cria cada questão com suas opções (createMany não suporta nested creates)
     const results = await Promise.allSettled(
       questoes.map(async (q, idx) => {
-        const textoOpcoes = [q.opcaoA, q.opcaoB, q.opcaoC, q.opcaoD];
-        const idxCorreta = LETRAS.indexOf(q.correta.toUpperCase() as typeof LETRAS[number]);
-        if (idxCorreta === -1) throw new Error(`Questão ${idx + 1}: 'correta' deve ser A, B, C ou D`);
+        const montado = montarOpcoes(q);
+        if ("erro" in montado) throw new Error(`Questão ${idx + 1}: ${montado.erro}`);
 
         return prisma.quiz.create({
           data: {
             pergunta:    q.pergunta.trim(),
             explicacao:  q.explicacao?.trim() || null,
+            tipo:        montado.tipo,
             dificuldade: normalizeDificuldade(q.dificuldade),
             tags:        q.tags?.trim() || null,
             ordem:       ordemBase + idx,
             topicoId,
             opcoes: {
-              create: textoOpcoes.map((texto, i) => ({
-                texto:   texto.trim(),
-                correta: i === idxCorreta,
-                ordem:   i,
-              })),
+              create: montado.opcoes,
             },
           },
         });

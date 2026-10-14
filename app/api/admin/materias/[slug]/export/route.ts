@@ -79,6 +79,7 @@ export async function GET(
           quizzes:   t.quizzes.map((q) => ({
             id:          q.id,
             pergunta:    q.pergunta,
+            tipo:        q.tipo,
             explicacao:  q.explicacao,
             dificuldade: q.dificuldade,
             tags:        q.tags,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { montarOpcoes } from "@/lib/study/montar-quiz";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 
@@ -12,6 +13,7 @@ type Materia = { id: string; nome: string; slug: string; icone: string | null; b
 
 type QuestaoRow = {
   bloco: string; topico: string;
+  tipo?: string;
   pergunta: string; opcaoA: string; opcaoB: string; opcaoC: string; opcaoD: string;
   correta: string; explicacao: string; dificuldade: string; tags: string;
   _erro?: string;
@@ -27,7 +29,7 @@ type Formato = "csv" | "json";
 
 // ── Tipo do JSON de backup ────────────────────────────────────────────────────
 interface BackupOpcao    { texto: string; correta: boolean; ordem: number }
-interface BackupQuiz     { pergunta: string; explicacao: string | null; dificuldade: string; tags: string | null; opcoes: BackupOpcao[] }
+interface BackupQuiz     { tipo?: string; pergunta: string; explicacao: string | null; dificuldade: string; tags: string | null; opcoes: BackupOpcao[] }
 interface BackupFlash    { frente: string; verso: string; dica: string | null }
 interface BackupTopico   { titulo: string; quizzes: BackupQuiz[]; flashcards: BackupFlash[] }
 interface BackupBloco    { nome: string; topicos: BackupTopico[] }
@@ -75,10 +77,17 @@ function parseQuestoesCSV(text: string, materia: Materia): QuestaoRow[] {
     const bloco  = g("bloco");
     const topico = g("topico");
     const correta = g("correta").toUpperCase();
+    const linha = {
+      tipo: g("tipo"), correta,
+      opcaoA: g("opcaoa") || g("opcao_a"), opcaoB: g("opcaob") || g("opcao_b"),
+      opcaoC: g("opcaoc") || g("opcao_c"), opcaoD: g("opcaod") || g("opcao_d"),
+    };
+    const montado = montarOpcoes(linha);
     const _erro = validaLinha(bloco, topico, materia)
-      ?? (!["A","B","C","D"].includes(correta) ? `"correta" deve ser A, B, C ou D (linha ${idx + 2})` : undefined);
+      ?? ("erro" in montado ? `${montado.erro} (linha ${idx + 2})` : undefined);
     return {
       bloco, topico,
+      tipo: g("tipo"),
       pergunta: g("pergunta"),
       opcaoA: g("opcaoa") || g("opcao_a"), opcaoB: g("opcaob") || g("opcao_b"),
       opcaoC: g("opcaoc") || g("opcao_c"), opcaoD: g("opcaod") || g("opcao_d"),
@@ -130,16 +139,18 @@ function parseJSON(text: string, materia: Materia): { questoes: QuestaoRow[]; fl
       for (const q of topico.quizzes ?? []) {
         const opcoes  = [...(q.opcoes ?? [])].sort((a, b) => a.ordem - b.ordem);
         const idxCert = opcoes.findIndex((o) => o.correta);
-        const correta = idxCert >= 0 ? LETRAS[idxCert] : "";
+        const ehCE    = q.tipo === "CERTO_ERRADO";
+        const correta = idxCert < 0 ? "" : ehCE ? (idxCert === 0 ? "C" : "E") : LETRAS[idxCert];
         const _erro   = _erroBase
           ?? (!correta ? `Questão sem opção correta marcada em "${topicoNome}"` : undefined);
         questoes.push({
           bloco: blocoNome, topico: topicoNome,
+          tipo:        ehCE ? "CE" : "MULTIPLA",
           pergunta:    q.pergunta ?? "",
-          opcaoA:      opcoes[0]?.texto ?? "",
-          opcaoB:      opcoes[1]?.texto ?? "",
-          opcaoC:      opcoes[2]?.texto ?? "",
-          opcaoD:      opcoes[3]?.texto ?? "",
+          opcaoA:      ehCE ? "" : opcoes[0]?.texto ?? "",
+          opcaoB:      ehCE ? "" : opcoes[1]?.texto ?? "",
+          opcaoC:      ehCE ? "" : opcoes[2]?.texto ?? "",
+          opcaoD:      ehCE ? "" : opcoes[3]?.texto ?? "",
           correta,
           explicacao:  q.explicacao  ?? "",
           dificuldade: q.dificuldade ?? "MEDIO",
@@ -523,8 +534,12 @@ export default function ImportarPage() {
                       <pre className="text-[10px] text-gray-500 bg-gray-800/60 rounded-lg p-3 overflow-x-auto leading-relaxed">
 {`bloco,topico,pergunta,
 opcaoA,opcaoB,opcaoC,opcaoD,
-correta,explicacao,dificuldade,tags`}
+correta,explicacao,dificuldade,tags,tipo`}
                       </pre>
+                      <p className="text-[10px] text-amber-400/90 mt-2 leading-relaxed">
+                        ⚖️ <strong>Certo/Errado (CEBRASPE):</strong> use <code>tipo = CE</code>, deixe opcaoA–D vazias
+                        e coloque <code>C</code> ou <code>E</code> em <code>correta</code>. A pergunta é a assertiva.
+                      </p>
                     </div>
                     <div>
                       <p className="text-xs font-bold text-blue-400 mb-2">🃏 Cabeçalho para Flashcards</p>

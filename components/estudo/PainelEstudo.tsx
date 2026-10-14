@@ -110,7 +110,7 @@ export default function PainelEstudo({ painel }: { painel: Painel }) {
             href="/estudo/simulado"
             className="flex items-center justify-between bg-gray-900 border border-gray-800 hover:border-violet-500/50 rounded-2xl px-4 py-3 transition-colors"
           >
-            <span className="text-sm font-semibold text-white">⏱️ Simulado cronometrado</span>
+            <span className="text-sm font-semibold text-white">⚖️ Simulado CEBRASPE</span>
             <span className="text-xs text-gray-500">→</span>
           </Link>
         </div>
