@@ -11,6 +11,7 @@ interface Usuario {
   ativo: boolean;
   createdAt: string;
   _count: { materias: number };
+  materiasAtivas: number;
 }
 
 export default function UsuariosPage() {
@@ -116,7 +117,8 @@ export default function UsuariosPage() {
                 <tr className="border-b border-gray-800 text-xs text-gray-400 uppercase tracking-wider">
                   <th className="px-6 py-4 text-left">Usuário</th>
                   <th className="px-6 py-4 text-left">Role</th>
-                  <th className="px-6 py-4 text-left">Matérias</th>
+                  <th className="px-6 py-4 text-left">Matérias ativas</th>
+                  <th className="px-6 py-4 text-left">Total de matérias</th>
                   <th className="px-6 py-4 text-left">Status</th>
                   <th className="px-6 py-4 text-left">Cadastro</th>
                   <th className="px-6 py-4 text-right">Ações</th>
@@ -141,6 +143,12 @@ export default function UsuariosPage() {
                           : "bg-gray-700/40 text-gray-400 border border-gray-600/40"
                       }`}>
                         {u.role}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`text-sm font-medium ${u.materiasAtivas >= 3 ? "text-amber-400" : "text-gray-300"}`}>
+                        {u.materiasAtivas}
+                        <span className="font-normal text-gray-600"> / 3</span>
                       </span>
                     </td>
                     <td className="px-6 py-4">

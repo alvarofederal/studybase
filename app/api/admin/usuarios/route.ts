@@ -25,7 +25,17 @@ export async function GET(_req: NextRequest) {
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json({ usuarios });
+  // Matérias atualmente ativas (sem expiração ou ainda dentro do prazo) por usuário
+  const grupos = await prisma.userMateria.groupBy({
+    by: ["userId"],
+    where: { OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }] },
+    _count: { _all: true },
+  });
+  const ativas = new Map(grupos.map((g) => [g.userId, g._count._all]));
+
+  return NextResponse.json({
+    usuarios: usuarios.map((u) => ({ ...u, materiasAtivas: ativas.get(u.id) ?? 0 })),
+  });
 }
 
 // Cria novo usuário (pelo admin)
