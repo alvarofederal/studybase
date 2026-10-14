@@ -1,6 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { getMateriaData } from "@/lib/getMateriaData";
+import { getMateriaEsqueleto } from "@/lib/getMateriaData";
 import { verifyAccessToken } from "@/lib/auth/jwt";
 import prisma from "@/lib/prisma";
 import EstudoCliente from "./EstudoCliente";
@@ -14,7 +14,7 @@ type Props = {
 
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
-  const materia = await getMateriaData(slug);
+  const materia = await getMateriaEsqueleto(slug);
   if (!materia) return { title: "Não encontrado" };
   return {
     title: `${materia.nome} | StudyBase`,
@@ -48,7 +48,7 @@ export default async function EstudoPage({ params, searchParams }: Props) {
   if (!user) redirect("/login");
 
   // ── Verifica acesso à matéria (incluindo expiração) ───────────────────
-  const materia = await getMateriaData(slug);
+  const materia = await getMateriaEsqueleto(slug);
   if (!materia) notFound();
 
   const acesso = await prisma.userMateria.findUnique({

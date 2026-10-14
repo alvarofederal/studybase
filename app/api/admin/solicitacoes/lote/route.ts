@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
   // Só aprova o que ainda está pendente (evita reaprovar rejeitadas por engano)
   const pendentes = await prisma.solicitacaoMateria.findMany({
     where: { id: { in: ids }, status: "PENDENTE" },
-    select: { id: true, userId: true, materiaId: true },
+    select: { id: true, userId: true, materiaId: true, user: { select: { nome: true, email: true } } },
   });
 
   const expiresAt = new Date(Date.now() + TRINTA_DIAS_MS);
@@ -52,6 +52,7 @@ export async function POST(req: NextRequest) {
   }
   const aprovaveis: typeof pendentes = [];
   let ignoradas = 0;
+  const bloqueados = new Map<string, { nome: string; email: string }>();
   for (const s of pendentes) {
     const ativas = ativasPorUsuario.get(s.userId) ?? 0;
     const jaTem = await prisma.userMateria.findFirst({
@@ -62,7 +63,11 @@ export async function POST(req: NextRequest) {
       },
       select: { id: true },
     });
-    if (!jaTem && ativas >= LIMITE_MATERIAS) { ignoradas++; continue; }
+    if (!jaTem && ativas >= LIMITE_MATERIAS) {
+      ignoradas++;
+      bloqueados.set(s.userId, { nome: s.user.nome, email: s.user.email });
+      continue;
+    }
     if (!jaTem) ativasPorUsuario.set(s.userId, ativas + 1);
     aprovaveis.push(s);
   }
@@ -78,5 +83,10 @@ export async function POST(req: NextRequest) {
     ]),
   );
 
-  return NextResponse.json({ ok: true, aprovadas: aprovaveis.length, ignoradas });
+  return NextResponse.json({
+    ok: true,
+    aprovadas: aprovaveis.length,
+    ignoradas,
+    bloqueados: [...bloqueados.values()],
+  });
 }

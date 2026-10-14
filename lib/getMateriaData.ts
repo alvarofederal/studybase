@@ -160,3 +160,103 @@ export async function getResumoMaterias(): Promise<ResumoMateria[]> {
     };
   });
 }
+
+/* ───────────────────────── Carregamento por tópico ─────────────────────────
+ * A tela de estudo precisa, para TODOS os tópicos, só do que alimenta o progresso e o
+ * destravamento dos blocos: ids de questões/flashcards e qual alternativa é a correta.
+ * Textos (conteúdo, enunciados, alternativas, explicações, cards) vêm sob demanda,
+ * por tópico, de /api/estudo/topico/[id].
+ */
+export interface MateriaEsqueleto {
+  id: string;
+  nome: string;
+  slug: string;
+  icone: string | null;
+  descricao: string | null;
+  blocos: {
+    id: string;
+    nome: string;
+    slug: string;
+    topicos: {
+      id: string;
+      titulo: string;
+      slug: string;
+      resumo: string | null;
+      conteudo: string;
+      quizzes: {
+        id: string;
+        pergunta: string;
+        explicacao: string | null;
+        opcoes: { id: string; texto: string; correta: boolean; ordem: number }[];
+      }[];
+      flashcards: { id: string; frente: string; verso: string; dica: string | null }[];
+    }[];
+  }[];
+}
+
+export const getMateriaEsqueleto = cache(async function getMateriaEsqueleto(
+  slug: string,
+): Promise<MateriaEsqueleto | null> {
+  const m = await prisma.materia.findUnique({
+    where: { slug, ativa: true },
+    select: {
+      id: true,
+      nome: true,
+      slug: true,
+      icone: true,
+      descricao: true,
+      blocos: {
+        orderBy: { ordem: "asc" },
+        select: {
+          id: true,
+          nome: true,
+          slug: true,
+          topicos: {
+            orderBy: { ordem: "asc" },
+            select: {
+              id: true,
+              titulo: true,
+              slug: true,
+              resumo: true,
+              quizzes: {
+                // itens CE derivados servem só ao simulado; não entram na aprovação do tópico
+                where: { origemId: null },
+                orderBy: { ordem: "asc" },
+                select: { id: true, opcoes: { orderBy: { ordem: "asc" }, select: { id: true, correta: true, ordem: true } } },
+              },
+              flashcards: { orderBy: { ordem: "asc" }, select: { id: true } },
+            },
+          },
+        },
+      },
+    },
+  });
+  if (!m) return null;
+
+  return {
+    id: m.id,
+    nome: m.nome,
+    slug: m.slug,
+    icone: m.icone,
+    descricao: m.descricao,
+    blocos: m.blocos.map((b) => ({
+      id: b.id,
+      nome: b.nome,
+      slug: b.slug,
+      topicos: b.topicos.map((t) => ({
+        id: t.id,
+        titulo: t.titulo,
+        slug: t.slug,
+        resumo: t.resumo,
+        conteudo: "",
+        quizzes: t.quizzes.map((q) => ({
+          id: q.id,
+          pergunta: "",
+          explicacao: null,
+          opcoes: q.opcoes.map((o) => ({ id: o.id, texto: "", correta: o.correta, ordem: o.ordem })),
+        })),
+        flashcards: t.flashcards.map((f) => ({ id: f.id, frente: "", verso: "", dica: null })),
+      })),
+    })),
+  };
+});

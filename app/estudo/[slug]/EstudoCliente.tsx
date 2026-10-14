@@ -170,7 +170,14 @@ export default function EstudoCliente({
   const router = useRouter();
 
   /* ── Estado ── */
-  const [topicoAtivo,    setTopicoAtivo]    = useState<Topico | null>(null);
+  // A matéria chega só como "esqueleto" (ids + alternativa correta, o suficiente para o progresso).
+  // O conteúdo completo de cada tópico é buscado quando o aluno o abre e guardado em `detalhes`.
+  const [topicoSel,      setTopicoAtivo]    = useState<Topico | null>(null);
+  const [detalhes,       setDetalhes]       = useState<Record<string, Topico>>({});
+  const [erroTopico,     setErroTopico]     = useState<string | null>(null);
+  const [tentativa,      setTentativa]      = useState(0);
+  const topicoAtivo = topicoSel ? (detalhes[topicoSel.id] ?? topicoSel) : null;
+  const detalheCarregando = !!topicoSel && !detalhes[topicoSel.id];
   const [abaAtiva,       setAbaAtiva]       = useState<"conteudo" | "quiz" | "flashcards">("conteudo");
   const [blocoAbertoId,  setBlocoAbertoId]  = useState<string | null>(null);
   const [sidebarAberta,  setSidebarAberta]  = useState(false);
@@ -265,6 +272,42 @@ export default function EstudoCliente({
     setSidebarAberta(false);
     setBlocoTrancadoMsg(null);
   }
+
+  // Busca o conteúdo completo do tópico aberto (e pré-carrega o próximo, para a navegação ser instantânea)
+  const topicoSelId = topicoSel?.id ?? null;
+  useEffect(() => {
+    if (!topicoSelId) return;
+    const ctrl = new AbortController();
+    const todos = materia.blocos.flatMap((b) => b.topicos);
+    const proximoId = todos[todos.findIndex((t) => t.id === topicoSelId) + 1]?.id;
+
+    async function buscar(id: string): Promise<Topico | null> {
+      try {
+        const res = await fetch(`/api/estudo/topico/${id}`, { signal: ctrl.signal });
+        if (!res.ok) throw new Error(String(res.status));
+        return (await res.json()) as Topico;
+      } catch {
+        return null;
+      }
+    }
+
+    (async () => {
+      if (!detalhes[topicoSelId]) {
+        const t = await buscar(topicoSelId);
+        if (ctrl.signal.aborted) return;
+        if (t) { setErroTopico(null); setDetalhes((d) => ({ ...d, [topicoSelId]: t })); }
+        else setErroTopico("Não foi possível carregar este tópico. Verifique sua conexão.");
+      }
+      if (proximoId && !detalhes[proximoId]) {
+        const n = await buscar(proximoId);
+        if (n && !ctrl.signal.aborted) setDetalhes((d) => (d[proximoId] ? d : { ...d, [proximoId]: n }));
+      }
+    })();
+
+    return () => ctrl.abort();
+    // detalhes é lido só para evitar refetch; a busca é disparada pela troca de tópico ou "tentar de novo"
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [topicoSelId, tentativa]);
 
   // Deep link vindo do mapa de estudo: /estudo/[slug]?topico=<id>
   const deepLinkAplicado = useRef(false);
@@ -470,6 +513,26 @@ export default function EstudoCliente({
                 </button>
                 <p className="hidden md:block text-sm mt-2 text-gray-600">Selecione um tópico na barra lateral para começar</p>
               </div>
+            </div>
+          ) : detalheCarregando ? (
+            /* ── Carregando o conteúdo do tópico ── */
+            <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-gray-500">
+              {erroTopico ? (
+                <>
+                  <p className="text-sm text-red-400">{erroTopico}</p>
+                  <button
+                    onClick={() => { setErroTopico(null); setTentativa((n) => n + 1); }}
+                    className="rounded-lg bg-gray-800 px-4 py-2 text-sm text-gray-200 hover:bg-gray-700"
+                  >
+                    Tentar de novo
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="h-6 w-6 animate-spin rounded-full border-2 border-emerald-500 border-t-transparent" />
+                  <p className="text-sm">Carregando {topicoAtivo?.titulo}…</p>
+                </>
+              )}
             </div>
           ) : (
             /* ── Tópico ativo ── */

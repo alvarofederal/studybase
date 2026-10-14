@@ -150,10 +150,33 @@ export default function SolicitacoesPage() {
   // ── Aprovar em bloco (selecionadas ou todas as pendentes) ────────────────
   async function aprovarLote(ids: string[]) {
     if (ids.length === 0) return;
-    const ok = window.confirm(
-      `Aprovar ${ids.length} solicitaç${ids.length === 1 ? "ão" : "ões"}? Cada acesso valerá por 30 dias.`,
-    );
-    if (!ok) return;
+
+    // Pré-análise (mesma regra do servidor): cada aluno comporta no máximo 3 matérias ativas
+    const vagas = new Map<string, number>();
+    const bloqueadosPrev = new Map<string, string>();
+    let liberaveis = 0;
+    for (const id of ids) {
+      const s = lista.find((x) => x.id === id);
+      if (!s) continue;
+      const restantes = vagas.get(s.user.id) ?? Math.max(0, 3 - (s.ativasDoAluno ?? 0));
+      if (restantes > 0) { liberaveis++; vagas.set(s.user.id, restantes - 1); }
+      else { vagas.set(s.user.id, 0); bloqueadosPrev.set(s.user.id, s.user.nome); }
+    }
+    const nomesBloq = [...bloqueadosPrev.values()];
+    if (liberaveis === 0) {
+      window.alert(
+        "Nenhuma solicitação pode ser aprovada: " +
+        (nomesBloq.length ? nomesBloq.join(", ") : "os alunos") +
+        " já tem 3 matérias ativas (o limite é 3).",
+      );
+      return;
+    }
+    const resumo =
+      `Serão aprovadas ${liberaveis} solicitaç${liberaveis === 1 ? "ão" : "ões"} (30 dias cada).` +
+      (nomesBloq.length
+        ? `\n\nNÃO serão aprovadas as de: ${nomesBloq.join(", ")} — já tem 3 matérias ativas.`
+        : "");
+    if (!window.confirm(resumo + "\n\nContinuar?")) return;
     setAprovandoLote(true);
     setMsgLote(null);
     try {
@@ -166,9 +189,12 @@ export default function SolicitacoesPage() {
       if (!res.ok) {
         setMsgLote(data.error ?? "Não foi possível aprovar em bloco.");
       } else {
+        const bloq = (data.bloqueados ?? []) as { nome: string }[];
         setMsgLote(
-          `${data.aprovadas} solicitaç${data.aprovadas === 1 ? "ão aprovada" : "ões aprovadas"}` +
-          (data.ignoradas > 0 ? `; ${data.ignoradas} ignorada${data.ignoradas === 1 ? "" : "s"} (aluno já tem 3 matérias ativas).` : "."),
+          `✅ ${data.aprovadas} solicitaç${data.aprovadas === 1 ? "ão liberada" : "ões liberadas"}.` +
+          (data.ignoradas > 0
+            ? ` ⚠ ${data.ignoradas} não liberada${data.ignoradas === 1 ? "" : "s"}: ${bloq.map((b) => b.nome).join(", ")} já tem 3 matérias ativas e não pode receber mais.`
+            : ""),
         );
         setSelecionadas(new Set());
       }
