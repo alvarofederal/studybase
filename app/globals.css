@@ -273,3 +273,6 @@ html.light .glass {
   background: rgba(255, 255, 255, 0.62);
   border: 1px solid rgba(255, 255, 255, 0.8);
 }
+
+/* Texto branco sobre o céu continua branco mesmo no tema claro */
+html.light .sh-landing .text-white { color: #ffffff; }

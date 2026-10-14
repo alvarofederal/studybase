@@ -49,24 +49,25 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950 px-4">
-      <div className="w-full max-w-md">
+    <div className="sh-landing relative isolate min-h-screen flex items-center justify-center px-4 py-10">
+      <div className="ceu-hero !fixed" aria-hidden="true"><span /><span /><span /><span /></div>
+      <div className="relative w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl glass-ceu mb-4">
             <span className="text-3xl">📚</span>
           </div>
-          <h1 className="text-3xl font-bold text-white">StudyBase</h1>
-          <p className="text-gray-400 mt-1 text-sm">Estudos para concursos</p>
+          <h1 className="text-3xl font-medium text-[#ffffff]">StudyBase</h1>
+          <p className="text-[#ffffff]/85 mt-1 text-sm">Estudos para concursos</p>
         </div>
 
         {/* Card */}
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-xl">
-          <h2 className="text-xl font-semibold text-white mb-6">Entrar na conta</h2>
+        <div className="glass p-8">
+          <h2 className="text-xl font-medium text-[#292827] mb-6">Entrar na conta</h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-[#292827] mb-1">
                 E-mail
               </label>
               <input
@@ -75,12 +76,12 @@ function LoginForm() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="seu@email.com"
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
+                className="w-full bg-white/80 border border-[#e3e3e2] rounded-lg px-4 py-3 text-[#292827] placeholder-[#8a8885] focus:outline-none focus:border-[#2f6fbd] focus:ring-1 focus:ring-[#2f6fbd] transition"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-[#292827] mb-1">
                 Senha
               </label>
               <input
@@ -89,12 +90,12 @@ function LoginForm() {
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
+                className="w-full bg-white/80 border border-[#e3e3e2] rounded-lg px-4 py-3 text-[#292827] placeholder-[#8a8885] focus:outline-none focus:border-[#2f6fbd] focus:ring-1 focus:ring-[#2f6fbd] transition"
               />
             </div>
 
             {erro && (
-              <div className="bg-red-900/30 border border-red-700/50 rounded-lg px-4 py-3 text-red-400 text-sm">
+              <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-700 text-sm">
                 {erro}
               </div>
             )}
@@ -102,26 +103,26 @@ function LoginForm() {
             <button
               type="submit"
               disabled={carregando}
-              className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 focus:ring-offset-gray-900"
+              className="w-full bg-[#12305e] hover:bg-[#1d4585] disabled:opacity-50 disabled:cursor-not-allowed text-[#ffffff] font-medium py-3 px-4 rounded-xl transition focus:outline-none focus:ring-2 focus:ring-[#2f6fbd] focus:ring-offset-2"
             >
               {carregando ? "Entrando..." : "Entrar"}
             </button>
           </form>
 
           <div className="mt-6 space-y-3 text-center text-sm">
-            <p className="text-gray-400">
+            <p className="text-[#666666]">
               <Link
                 href="/recuperar-senha"
-                className="text-emerald-400 hover:text-emerald-300 transition"
+                className="text-[#2f6fbd] hover:underline transition"
               >
                 Esqueci minha senha
               </Link>
             </p>
-            <p className="text-gray-500">
+            <p className="text-[#666666]">
               Não tem conta?{" "}
               <Link
                 href="/cadastro"
-                className="text-emerald-400 hover:text-emerald-300 transition"
+                className="text-[#2f6fbd] hover:underline transition"
               >
                 Cadastre-se
               </Link>

@@ -37,26 +37,27 @@ export default function RecuperarSenhaPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-950 px-4">
-      <div className="w-full max-w-md">
+    <div className="sh-landing relative isolate min-h-screen flex items-center justify-center px-4 py-10">
+      <div className="ceu-hero !fixed" aria-hidden="true"><span /><span /><span /><span /></div>
+      <div className="relative w-full max-w-md">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-600/20 border border-emerald-500/30 mb-4">
+          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl glass-ceu mb-4">
             <span className="text-3xl">📚</span>
           </div>
-          <h1 className="text-3xl font-bold text-white">StudyBase</h1>
+          <h1 className="text-3xl font-medium text-[#ffffff]">StudyBase</h1>
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 shadow-xl">
-          <h2 className="text-xl font-semibold text-white mb-2">Recuperar senha</h2>
-          <p className="text-gray-400 text-sm mb-6">
+        <div className="glass p-8">
+          <h2 className="text-xl font-medium text-[#292827] mb-2">Recuperar senha</h2>
+          <p className="text-[#666666] text-sm mb-6">
             Informe seu e-mail e enviaremos um link para redefinir sua senha.
           </p>
 
           {enviado ? (
-            <div className="bg-emerald-900/30 border border-emerald-700/50 rounded-lg px-4 py-6 text-center">
+            <div className="bg-[#2f6fbd]/10 border border-[#2f6fbd]/30 rounded-lg px-4 py-6 text-center">
               <span className="text-4xl block mb-3">📧</span>
-              <p className="text-emerald-400 font-medium">E-mail enviado!</p>
-              <p className="text-gray-400 text-sm mt-2">
+              <p className="text-[#2f6fbd] font-medium">E-mail enviado!</p>
+              <p className="text-[#666666] text-sm mt-2">
                 Verifique sua caixa de entrada e a pasta de spam.
                 <br />O link expira em 1 hora.
               </p>
@@ -64,7 +65,7 @@ export default function RecuperarSenhaPage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-[#292827] mb-1">
                   E-mail
                 </label>
                 <input
@@ -73,12 +74,12 @@ export default function RecuperarSenhaPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="seu@email.com"
-                  className="w-full bg-gray-800 border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 transition"
+                  className="w-full bg-white/80 border border-[#e3e3e2] rounded-lg px-4 py-3 text-[#292827] placeholder-[#8a8885] focus:outline-none focus:border-[#2f6fbd] focus:ring-1 focus:ring-[#2f6fbd] transition"
                 />
               </div>
 
               {erro && (
-                <div className="bg-red-900/30 border border-red-700/50 rounded-lg px-4 py-3 text-red-400 text-sm">
+                <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-red-700 text-sm">
                   {erro}
                 </div>
               )}
@@ -86,15 +87,15 @@ export default function RecuperarSenhaPage() {
               <button
                 type="submit"
                 disabled={carregando}
-                className="w-full bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition"
+                className="w-full bg-[#12305e] hover:bg-[#1d4585] disabled:opacity-50 disabled:cursor-not-allowed text-[#ffffff] font-medium py-3 px-4 rounded-xl transition"
               >
                 {carregando ? "Enviando..." : "Enviar link de recuperação"}
               </button>
             </form>
           )}
 
-          <p className="mt-6 text-center text-sm text-gray-500">
-            <Link href="/login" className="text-emerald-400 hover:text-emerald-300 transition">
+          <p className="mt-6 text-center text-sm text-[#666666]">
+            <Link href="/login" className="text-[#2f6fbd] hover:underline transition">
               ← Voltar ao login
             </Link>
           </p>
