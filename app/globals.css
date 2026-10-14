@@ -246,3 +246,47 @@ html.light .bg-gradient-to-br.from-gray-950 {
 
 /* Barra de rolagem discreta */
 html.light ::selection { background: #d4c7ff; color: #292827; }
+
+/* ========== CÉU ANIMADO (nuvens à deriva, só no tema claro) ========== */
+.ceu { display: none; }
+html.light .ceu {
+  display: block;
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+  background:
+    radial-gradient(70% 55% at 10% 0%, rgba(168, 140, 255, 0.40), transparent 65%),
+    radial-gradient(55% 50% at 95% 5%, rgba(120, 170, 255, 0.34), transparent 65%),
+    radial-gradient(55% 55% at 85% 100%, rgba(255, 150, 200, 0.30), transparent 65%),
+    #f2f0eb;
+}
+html.light body { background-color: transparent; background-image: none; }
+.ceu span {
+  position: absolute;
+  left: -40vw;
+  width: 70vw;
+  height: 26vh;
+  border-radius: 50%;
+  filter: blur(48px);
+  opacity: 0.75;
+  background: radial-gradient(closest-side, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0));
+  animation: deriva 90s linear infinite;
+  animation-delay: var(--d, 0s);
+}
+.ceu span:nth-child(1) { top: 6%;  --d: -10s; }
+.ceu span:nth-child(2) { top: 28%; --d: -45s; width: 90vw; height: 32vh; background: radial-gradient(closest-side, rgba(236, 224, 255, 0.95), rgba(236, 224, 255, 0)); animation-duration: 130s; }
+.ceu span:nth-child(3) { top: 52%; --d: -70s; background: radial-gradient(closest-side, rgba(255, 228, 240, 0.95), rgba(255, 228, 240, 0)); animation-duration: 110s; }
+.ceu span:nth-child(4) { top: 74%; --d: -25s; width: 100vw; animation-duration: 150s; }
+@keyframes deriva {
+  from { transform: translateX(0); }
+  to   { transform: translateX(210vw); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ceu span { animation: none; left: 10vw; }
+}
+
+/* Raízes de página deixam o céu aparecer */
+html.light .min-h-screen.bg-gray-950,
+html.light .h-screen.bg-gray-950 { background-color: transparent; }

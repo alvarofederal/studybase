@@ -39,6 +39,7 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col bg-gray-950" suppressHydrationWarning>
+        <div className="ceu" aria-hidden="true"><span /><span /><span /><span /></div>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
