@@ -1,18 +1,13 @@
+/// <reference types="vite/client" />
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
-import b1 from "../../prisma/data/lingua-portuguesa/01-interpretacao.mjs";
-import b2 from "../../prisma/data/lingua-portuguesa/02-fonologia-ortografia.mjs";
-import b3 from "../../prisma/data/lingua-portuguesa/03-semantica-formacao.mjs";
-import b4 from "../../prisma/data/lingua-portuguesa/04-classes-de-palavras.mjs";
-import b5 from "../../prisma/data/lingua-portuguesa/05-sintaxe.mjs";
-import b6 from "../../prisma/data/lingua-portuguesa/06-pontuacao-concordancia-regencia-crase.mjs";
-import b7 from "../../prisma/data/lingua-portuguesa/07-reescrita-registro-culto.mjs";
-import b8 from "../../prisma/data/lingua-portuguesa/08-redacao-oficial.mjs";
 
-const topicos = ([b1, b2, b3, b4, b5, b6, b7, b8] as { topicos: { titulo: string; conteudo: string }[] }[]).flatMap(
-  (b) => b.topicos,
-);
+type Bloco = { topicos: { titulo: string; conteudo: string }[] };
+const modulos = import.meta.glob("../../prisma/data/**/*.mjs", { eager: true }) as Record<string, { default: Bloco | Bloco[] }>;
+const topicos = Object.values(modulos)
+  .flatMap((m) => (Array.isArray(m.default) ? m.default : [m.default]))
+  .flatMap((b) => b.topicos);
 
 const textoVisivel = (html: string) => html.replace(/<[^>]+>/g, "");
 
