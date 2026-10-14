@@ -28,163 +28,145 @@ export default async function Home() {
   const totalFlashcards = materias.reduce((a, m) => a + m.blocos.reduce((b, bl) => b + bl.topicos.reduce((c, t) => c + t.flashcards.length, 0), 0), 0);
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white overflow-x-hidden">
+    <div className="sh-landing min-h-screen overflow-x-hidden">
 
       {/* ══ NAVBAR ══════════════════════════════════════════════════ */}
-      <nav className="fixed top-0 inset-x-0 z-50 bg-gray-950/80 backdrop-blur-md border-b border-gray-800/60">
-        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-base font-black bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
-              StudyBase
-            </span>
-            <span className="hidden sm:inline text-[10px] text-gray-600 font-mono bg-gray-800/80 border border-gray-700 px-1.5 py-0.5 rounded">
-              CONCURSOS
-            </span>
-          </div>
-          <div className="flex items-center gap-4">
-            <a href="#materias" className="text-sm text-gray-400 hover:text-white transition-colors hidden sm:block">
-              Matérias
-            </a>
-            <a href="#como-funciona" className="text-sm text-gray-400 hover:text-white transition-colors hidden sm:block">
-              Como funciona
-            </a>
+      <nav className="fixed inset-x-0 top-0 z-50 border-b border-[#e3e3e2] bg-[#f2f0eb]/75 backdrop-blur-[12px]">
+        <div className="mx-auto flex h-16 max-w-[1200px] items-center justify-between px-6">
+          <span className="text-[15px] font-semibold uppercase tracking-[0.14em] text-[#292827]">
+            StudyBase
+          </span>
+          <div className="flex items-center gap-6">
+            <a href="#materias" className="hidden text-sm text-[#292827] hover:underline sm:block">Matérias</a>
+            <a href="#como-funciona" className="hidden text-sm text-[#292827] hover:underline sm:block">Como funciona</a>
             {sessao ? (
-              /* Logado: botão Acessar + Sair + toggle tema (client component) */
               <LandingUserButtons role={sessao.role as "ADMIN" | "USER"} />
             ) : (
-              /* Não logado: toggle tema + botão Entrar */
               <LandingGuestButtons />
             )}
           </div>
         </div>
       </nav>
 
-      {/* ══ HERO ════════════════════════════════════════════════════ */}
-      <section className="relative pt-32 pb-24 overflow-hidden">
-        {/* Fundo gradiente animado */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-0 left-1/4 w-[600px] h-[600px] bg-emerald-500/8 rounded-full blur-[120px]" />
-          <div className="absolute bottom-0 right-1/4 w-[500px] h-[500px] bg-teal-500/6 rounded-full blur-[100px]" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-emerald-900/20 rounded-full blur-[150px]" />
+      {/* ══ HERO — céu animado + cards de vidro flutuantes ═══════════ */}
+      <section className="relative isolate min-h-[720px] pt-16 text-white">
+        <div className="ceu-hero" aria-hidden="true">
+          <span /><span /><span /><span />
         </div>
 
-        {/* Grade sutil */}
-        <div
-          className="absolute inset-0 opacity-[0.03] pointer-events-none"
-          style={{
-            backgroundImage: "linear-gradient(#10b981 1px, transparent 1px), linear-gradient(90deg, #10b981 1px, transparent 1px)",
-            backgroundSize: "40px 40px",
-          }}
-        />
-
-        <div className="relative max-w-5xl mx-auto px-6 text-center">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 bg-emerald-500/10 border border-emerald-500/25 rounded-full px-4 py-1.5 text-xs text-emerald-400 font-medium mb-8 uppercase tracking-widest">
-            <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-            Plataforma de Estudos de Base para Concursos
-          </div>
-
-          {/* Headline */}
-          <h1 className="text-6xl md:text-7xl font-black leading-[1.05] mb-6">
-            <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
-              Estude melhor.
-            </span>
-            <br />
-            <span className="text-white">Passe mais rápido.</span>
+        <div className="relative mx-auto max-w-[1200px] px-6 pb-28 pt-24 text-center">
+          <h1 className="mx-auto max-w-3xl text-5xl leading-[1.02] tracking-[-0.03em] md:text-7xl">
+            Estude melhor.<br />Passe mais rápido.
           </h1>
-
-          <p className="text-gray-400 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed mb-10">
-            Conteúdo estruturado em blocos temáticos, tópicos simplificados, questões de múltipla escolha e flashcards
-            para revisão ativa — tudo em um só lugar.
+          <p className="mx-auto mt-6 max-w-xl text-lg text-white/90 md:text-xl">
+            Conteúdo em blocos, questões Certo/Errado no padrão CEBRASPE, flashcards e revisão espaçada — num só lugar.
           </p>
-
-          {/* CTAs */}
-          <div className="flex items-center justify-center gap-4 flex-wrap mb-16">
+          <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
             <a
               href="#materias"
-              className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold px-7 py-3.5 rounded-2xl text-sm transition-all hover:scale-105 active:scale-100"
+              className="inline-flex min-h-12 items-center gap-3 rounded-2xl bg-[#421d24] px-6 font-medium text-white transition-colors hover:bg-[#5a2832]"
             >
-              Começar a estudar →
+              Começar a estudar
+              <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-[#8a6cf0] to-[#4e63d6]">→</span>
             </a>
-            <a
-              href="#como-funciona"
-              className="inline-flex items-center gap-2 bg-gray-800 hover:bg-gray-700 text-gray-300 font-medium px-7 py-3.5 rounded-2xl text-sm transition-colors border border-gray-700"
-            >
+            <a href="#como-funciona" className="glass-ceu px-6 py-3 text-sm font-medium transition-colors hover:bg-white/20">
               Como funciona
             </a>
           </div>
 
-          {/* Stats */}
-          <div className="inline-flex items-center gap-8 md:gap-12 bg-gray-900/60 border border-gray-800 rounded-2xl px-8 py-4 flex-wrap justify-center">
-            {[
-              { n: materias.length, l: "Matérias" },
-              { n: totalBlocos,     l: "Blocos" },
-              { n: totalTopicos,    l: "Tópicos" },
-              { n: totalQuizzes,    l: "Questões" },
-              { n: totalFlashcards, l: "Flashcards" },
-            ].map(({ n, l }, i) => (
-              <div key={l} className="flex items-center gap-8">
-                {i > 0 && <div className="w-px h-8 bg-gray-700 hidden sm:block" />}
-                <div className="text-center">
-                  <div className="text-2xl font-black text-emerald-400">{n}</div>
-                  <div className="text-[11px] text-gray-500 uppercase tracking-wider">{l}</div>
-                </div>
+          {/* Cards flutuantes (desktop) */}
+          <div className="relative mx-auto mt-16 hidden h-[330px] max-w-[1100px] text-left md:block">
+            {/* Questão CEBRASPE */}
+            <div className="glass-ceu flutuar-lento absolute left-0 top-4 w-[330px] p-5" style={{ "--d": "0s" } as React.CSSProperties}>
+              <p className="text-[11px] uppercase tracking-widest text-white/70">Questão · Certo/Errado</p>
+              <p className="mt-2 text-[15px] leading-snug">
+                A LGPD aplica-se ao tratamento de dados de pessoa jurídica de direito privado.
+              </p>
+              <div className="mt-4 flex gap-2">
+                <span className="rounded-lg bg-white/25 px-4 py-1.5 text-sm">Certo</span>
+                <span className="rounded-lg bg-white/10 px-4 py-1.5 text-sm">Errado</span>
               </div>
-            ))}
+            </div>
+
+            {/* Dock */}
+            <div className="glass-ceu flutuar-lento absolute left-[48%] top-0 flex w-12 flex-col items-center gap-4 py-4 text-lg" style={{ "--d": "-2s" } as React.CSSProperties}>
+              <span>📖</span><span>🧠</span><span>🃏</span><span>🗺️</span>
+            </div>
+
+            {/* Chip */}
+            <div className="glass-ceu flutuar-lento absolute right-4 top-0 px-4 py-2 text-sm" style={{ "--d": "-3s" } as React.CSSProperties}>
+              🔥 7 dias de sequência
+            </div>
+
+            {/* Flashcard */}
+            <div className="glass-ceu flutuar-lento absolute right-0 top-16 w-[320px] p-5" style={{ "--d": "-4s" } as React.CSSProperties}>
+              <p className="text-[11px] uppercase tracking-widest text-white/70">Flashcard · revisão espaçada</p>
+              <p className="mt-2 text-[15px] font-medium">Prazo da LAI para resposta ao pedido?</p>
+              <p className="mt-2 text-sm text-white/85">20 dias, prorrogáveis por mais 10 (art. 11).</p>
+              <div className="mt-4 flex gap-2 text-xs">
+                <span className="rounded-lg bg-white/25 px-3 py-1">Errei</span>
+                <span className="rounded-lg bg-white/25 px-3 py-1">Acertei</span>
+              </div>
+            </div>
+
+            {/* Lista */}
+            <div className="glass-ceu flutuar-lento absolute bottom-0 left-[8%] w-[460px] p-4 text-sm" style={{ "--d": "-1s" } as React.CSSProperties}>
+              <div className="mb-2 flex gap-4 text-white/80">
+                <span>Hoje <b className="font-medium text-white">12</b></span>
+                <span>Revisão <b className="font-medium text-white">8</b></span>
+                <span>Erros <b className="font-medium text-white">5</b></span>
+              </div>
+              {["Direito Constitucional — Controle de constitucionalidade", "Raciocínio Lógico — Tabelas-verdade", "LGPD — Princípios (art. 6º)"].map((t) => (
+                <div key={t} className="truncate border-t border-white/15 py-1.5">{t}</div>
+              ))}
+            </div>
+
+            {/* Chip */}
+            <div className="glass-ceu flutuar-lento absolute bottom-6 right-[10%] px-4 py-2 text-sm" style={{ "--d": "-5s" } as React.CSSProperties}>
+              ✨ Mapa de estudo interativo
+            </div>
           </div>
         </div>
       </section>
 
+      {/* ══ NÚMEROS ═════════════════════════════════════════════════ */}
+      <section className="mx-auto max-w-[1200px] px-6 py-14">
+        <div className="glass flex flex-wrap items-center justify-around gap-8 px-8 py-7">
+          {[
+            { n: materias.length, l: "Matérias" },
+            { n: totalBlocos,     l: "Blocos" },
+            { n: totalTopicos,    l: "Tópicos" },
+            { n: totalQuizzes,    l: "Questões" },
+            { n: totalFlashcards, l: "Flashcards" },
+          ].map(({ n, l }) => (
+            <div key={l} className="text-center">
+              <div className="text-4xl tracking-tight text-[#292827]">{n.toLocaleString("pt-BR")}</div>
+              <div className="mt-1 text-xs uppercase tracking-wider text-[#666666]">{l}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* ══ COMO FUNCIONA ═══════════════════════════════════════════ */}
-      <section id="como-funciona" className="py-24 border-t border-gray-800/60">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="text-center mb-14">
-            <p className="text-xs text-emerald-400 font-bold uppercase tracking-widest mb-3">Metodologia</p>
-            <h2 className="text-3xl md:text-4xl font-black text-white">Como funciona</h2>
-            <p className="text-gray-500 mt-3 max-w-xl mx-auto">
+      <section id="como-funciona" className="py-20">
+        <div className="mx-auto max-w-[1200px] px-6">
+          <div className="mb-12 text-center">
+            <h2 className="text-4xl md:text-5xl">Como funciona</h2>
+            <p className="mx-auto mt-3 max-w-xl text-[#666666]">
               Três etapas para dominar o conteúdo e chegar preparado na prova.
             </p>
           </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {[
-              {
-                step: "01",
-                icon: "📖",
-                title: "Leia o conteúdo",
-                desc: "Conteúdo organizado em blocos e tópicos temáticos, do mais básico ao mais específico. Markdown com formatação clara.",
-                color: "emerald",
-              },
-              {
-                step: "02",
-                icon: "🧠",
-                title: "Pratique com Quiz",
-                desc: "Questões de múltipla escolha com gabarito e explicação detalhada. Teste seu entendimento logo após ler cada tópico.",
-                color: "violet",
-              },
-              {
-                step: "03",
-                icon: "🃏",
-                title: "Revise com Flashcards",
-                desc: "Revisão ativa com cards frente/verso. A técnica mais eficiente para fixar conceitos e não esquecer na hora da prova.",
-                color: "teal",
-              },
-            ].map(({ step, icon, title, desc, color }) => (
-              <div
-                key={step}
-                className="relative bg-gray-900 border border-gray-800 rounded-3xl p-8 hover:border-gray-700 transition-colors group"
-              >
-                <div className="absolute top-6 right-6 text-5xl font-black text-gray-800 group-hover:text-gray-700 transition-colors select-none">
-                  {step}
-                </div>
-                <div className="text-4xl mb-5">{icon}</div>
-                <h3 className="text-lg font-bold text-white mb-3">{title}</h3>
-                <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
-                <div className={`absolute bottom-0 left-0 right-0 h-0.5 rounded-b-3xl bg-gradient-to-r ${
-                  color === "emerald" ? "from-emerald-500/0 via-emerald-500/60 to-emerald-500/0" :
-                  color === "violet"  ? "from-violet-500/0 via-violet-500/60 to-violet-500/0" :
-                                        "from-teal-500/0 via-teal-500/60 to-teal-500/0"
-                }`} />
+              { step: "01", icon: "📖", title: "Leia o conteúdo", desc: "Blocos e tópicos temáticos, do básico ao específico, com formatação clara." },
+              { step: "02", icon: "🧠", title: "Pratique com questões", desc: "Múltipla escolha e Certo/Errado com gabarito comentado, logo após cada tópico." },
+              { step: "03", icon: "🃏", title: "Revise com flashcards", desc: "Revisão ativa com repetição espaçada para fixar e não esquecer na prova." },
+            ].map(({ step, icon, title, desc }, i) => (
+              <div key={step} className="glass flutuar-lento relative p-8" style={{ "--d": `${-i * 2}s` } as React.CSSProperties}>
+                <div className="absolute right-6 top-5 select-none text-5xl text-[#292827]/10">{step}</div>
+                <div className="mb-5 text-4xl">{icon}</div>
+                <h3 className="mb-3 text-xl">{title}</h3>
+                <p className="text-sm leading-relaxed text-[#666666]">{desc}</p>
               </div>
             ))}
           </div>
@@ -192,112 +174,61 @@ export default async function Home() {
       </section>
 
       {/* ══ MATÉRIAS ════════════════════════════════════════════════ */}
-      <section id="materias" className="py-24 border-t border-gray-800/60">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-end justify-between mb-12">
-            <div>
-              <p className="text-xs text-emerald-400 font-bold uppercase tracking-widest mb-3">Conteúdo</p>
-              <h2 className="text-3xl md:text-4xl font-black text-white">Matérias disponíveis</h2>
-              <p className="text-gray-500 mt-2">
-                {materias.length > 0
-                  ? `${materias.length} matéria${materias.length > 1 ? "s" : ""} com conteúdo completo`
-                  : "Em breve"}
-              </p>
-            </div>
+      <section id="materias" className="py-20">
+        <div className="mx-auto max-w-[1200px] px-6">
+          <div className="mb-12">
+            <h2 className="text-4xl md:text-5xl">Matérias disponíveis</h2>
+            <p className="mt-2 text-[#666666]">
+              {materias.length > 0
+                ? `${materias.length} matéria${materias.length > 1 ? "s" : ""} com conteúdo completo`
+                : "Em breve"}
+            </p>
           </div>
 
           {materias.length === 0 ? (
-            <div className="text-center py-24 bg-gray-900 border border-gray-800 rounded-3xl">
-              <div className="text-5xl mb-5">📚</div>
-              <p className="text-gray-400 text-lg font-medium">Conteúdo em preparação</p>
-              <p className="text-gray-600 text-sm mt-2">As matérias serão disponibilizadas em breve.</p>
+            <div className="glass py-24 text-center">
+              <div className="mb-5 text-5xl">📚</div>
+              <p className="text-lg">Conteúdo em preparação</p>
+              <p className="mt-2 text-sm text-[#666666]">As matérias serão disponibilizadas em breve.</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
               {materias.map((m) => {
                 const totalTop = m.blocos.reduce((a, b) => a + b.topicos.length, 0);
                 const totalQ   = m.blocos.reduce((a, b) => a + b.topicos.reduce((c, t) => c + t.quizzes.length, 0), 0);
                 const totalFc  = m.blocos.reduce((a, b) => a + b.topicos.reduce((c, t) => c + t.flashcards.length, 0), 0);
-                const progresso = totalTop > 0 ? Math.min(100, Math.round(((totalQ + totalFc) / (totalTop * 6)) * 100)) : 0;
 
                 return (
                   <Link
                     key={m.slug}
                     href={`/estudo/${m.slug}`}
-                    className="group flex flex-col bg-gray-900 border border-gray-800 rounded-3xl overflow-hidden hover:border-emerald-500/40 transition-all hover:shadow-[0_0_40px_-10px_rgba(16,185,129,0.15)]"
+                    className="glass glass-hover group flex flex-col p-7"
                   >
-                    {/* Topo colorido */}
-                    <div className="relative h-2 bg-gray-800">
-                      <div
-                        className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-r-full transition-all"
-                        style={{ width: `${Math.max(progresso, 8)}%` }}
-                      />
-                    </div>
-
-                    <div className="flex-1 p-7">
-                      {/* Ícone + título */}
-                      <div className="flex items-start gap-4 mb-5">
-                        <div className="w-12 h-12 rounded-2xl bg-gray-800 border border-gray-700 flex items-center justify-center text-2xl shrink-0 group-hover:border-emerald-500/40 transition-colors">
-                          {m.icone ?? "📚"}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-bold text-white text-base leading-tight group-hover:text-emerald-400 transition-colors">
-                            {m.nome}
-                          </h3>
-                          {m.descricao && (
-                            <p className="text-xs text-gray-500 mt-1.5 leading-relaxed line-clamp-2">
-                              {m.descricao}
-                            </p>
-                          )}
-                        </div>
+                    <div className="mb-5 flex items-start gap-4">
+                      <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-white/70 text-2xl">
+                        {m.icone ?? "📚"}
                       </div>
-
-                      {/* Stats da matéria */}
-                      <div className="grid grid-cols-4 gap-2 mb-5">
-                        {[
-                          { n: m.blocos.length, l: "blocos",    icon: "📦" },
-                          { n: totalTop,        l: "tópicos",   icon: "📝" },
-                          { n: totalQ,          l: "questões",  icon: "🧠" },
-                          { n: totalFc,         l: "cards",     icon: "🃏" },
-                        ].map(({ n, l, icon }) => (
-                          <div key={l} className="bg-gray-800/60 rounded-xl p-2 text-center">
-                            <div className="text-xs mb-0.5">{icon}</div>
-                            <div className="text-sm font-bold text-white">{n}</div>
-                            <div className="text-[10px] text-gray-600">{l}</div>
-                          </div>
-                        ))}
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-lg leading-tight">{m.nome}</h3>
+                        {m.descricao && (
+                          <p className="mt-1.5 line-clamp-2 text-xs leading-relaxed text-[#666666]">{m.descricao}</p>
+                        )}
                       </div>
-
-                      {/* Blocos preview */}
-                      {m.blocos.length > 0 && (
-                        <div className="flex flex-wrap gap-1.5">
-                          {m.blocos.slice(0, 4).map((b) => (
-                            <span
-                              key={b.id}
-                              className="text-[10px] bg-gray-800 text-gray-500 px-2 py-0.5 rounded-md truncate max-w-[120px]"
-                            >
-                              {b.nome}
-                            </span>
-                          ))}
-                          {m.blocos.length > 4 && (
-                            <span className="text-[10px] text-gray-600 px-2 py-0.5">
-                              +{m.blocos.length - 4}
-                            </span>
-                          )}
+                    </div>
+                    <div className="mb-5 grid grid-cols-4 gap-2">
+                      {[
+                        { n: m.blocos.length, l: "blocos" },
+                        { n: totalTop,        l: "tópicos" },
+                        { n: totalQ,          l: "questões" },
+                        { n: totalFc,         l: "cards" },
+                      ].map(({ n, l }) => (
+                        <div key={l} className="rounded-xl bg-white/55 p-2 text-center">
+                          <div className="text-sm font-semibold text-[#292827]">{n}</div>
+                          <div className="text-[10px] text-[#666666]">{l}</div>
                         </div>
-                      )}
+                      ))}
                     </div>
-
-                    {/* Footer do card */}
-                    <div className="border-t border-gray-800 px-7 py-4 flex items-center justify-between bg-gray-900/50">
-                      <div className="flex items-center gap-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                        <span className="text-xs text-gray-500">Disponível</span>
-                      </div>
-                      <span className="text-xs font-medium text-emerald-400 group-hover:translate-x-1 transition-transform inline-block">
-                        Estudar agora →
-                      </span>
-                    </div>
+                    <span className="mt-auto text-sm text-[#714cb6] group-hover:underline">Estudar agora →</span>
                   </Link>
                 );
               })}
@@ -306,19 +237,17 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* ══ CTA BANNER ══════════════════════════════════════════════ */}
-      <section className="py-20 border-t border-gray-800/60">
-        <div className="max-w-4xl mx-auto px-6 text-center">
-          <div className="bg-gradient-to-r from-emerald-900/40 via-teal-900/30 to-emerald-900/40 border border-emerald-500/20 rounded-3xl p-12">
-            <h2 className="text-3xl md:text-4xl font-black text-white mb-4">
-              Pronto para começar?
-            </h2>
-            <p className="text-gray-400 mb-8 max-w-lg mx-auto">
-              Escolha uma matéria acima e comece a estudar agora mesmo. Totalmente gratuito.
+      {/* ══ CTA ═════════════════════════════════════════════════════ */}
+      <section className="py-20">
+        <div className="mx-auto max-w-[1200px] px-6">
+          <div className="rounded-[24px] bg-[#0c4243] px-8 py-16 text-center text-white">
+            <h2 className="text-4xl md:text-5xl">Pronto para começar?</h2>
+            <p className="mx-auto mt-4 max-w-lg text-white/80">
+              Escolha uma matéria e comece agora mesmo.
             </p>
             <a
               href="#materias"
-              className="inline-flex items-center gap-2 bg-emerald-500 hover:bg-emerald-400 text-gray-950 font-bold px-8 py-3.5 rounded-2xl text-sm transition-all hover:scale-105 active:scale-100"
+              className="mt-8 inline-flex min-h-12 items-center rounded-2xl bg-[#421d24] px-7 font-medium text-white transition-colors hover:bg-[#5a2832]"
             >
               Ver matérias disponíveis →
             </a>
@@ -327,22 +256,16 @@ export default async function Home() {
       </section>
 
       {/* ══ FOOTER ══════════════════════════════════════════════════ */}
-      <footer className="border-t border-gray-800/60 py-10">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="font-black text-sm bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
-              StudyBase
-            </span>
-            <span className="text-xs text-gray-600">— Plataforma de estudos de base para concursos</span>
-          </div>
-          <div className="flex items-center gap-6 text-xs text-gray-600">
-            <a href="#materias" className="hover:text-gray-400 transition-colors">Matérias</a>
-            <a href="#como-funciona" className="hover:text-gray-400 transition-colors">Como funciona</a>
-            <Link href="/login" className="hover:text-gray-400 transition-colors">Entrar</Link>
+      <footer className="bg-[#421d24] py-10 text-white/85">
+        <div className="mx-auto flex max-w-[1200px] flex-col items-center justify-between gap-4 px-6 sm:flex-row">
+          <span className="text-sm uppercase tracking-[0.14em]">StudyBase <span className="normal-case tracking-normal text-white/60">— estudos de base para concursos</span></span>
+          <div className="flex items-center gap-6 text-sm text-white/70">
+            <a href="#materias" className="hover:text-white hover:underline">Matérias</a>
+            <a href="#como-funciona" className="hover:text-white hover:underline">Como funciona</a>
+            <Link href="/login" className="hover:text-white hover:underline">Entrar</Link>
           </div>
         </div>
       </footer>
-
     </div>
   );
 }

@@ -5,14 +5,14 @@ import { createContext, useContext, useEffect, useState } from "react";
 type Theme = "dark" | "light";
 type ThemeCtx = { theme: Theme; toggle: () => void };
 
-const ThemeContext = createContext<ThemeCtx>({ theme: "light", toggle: () => {} });
+const ThemeContext = createContext<ThemeCtx>({ theme: "dark", toggle: () => {} });
 
 /** Lê o localStorage e sincroniza a classe no <html> uma única vez — sem useEffect. */
 function initTheme(): Theme {
-  if (typeof window === "undefined") return "light"; // SSR guard
+  if (typeof window === "undefined") return "dark"; // SSR guard
   const saved = localStorage.getItem("sb-theme") as Theme | null;
-  // Padrão: claro (identidade Superhuman); escuro só se o aluno escolheu
-  const theme: Theme = saved === "dark" ? "dark" : "light";
+  // Padrão: escuro; claro só se o aluno escolheu
+  const theme: Theme = saved === "light" ? "light" : "dark";
   // Garante que a classe esteja correta (o anti-flash do layout.tsx já faz isso,
   // mas este guard cobre o caso de o script não ter rodado ainda)
   if (theme === "light") {

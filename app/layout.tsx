@@ -34,12 +34,12 @@ export default function RootLayout({
         {/* Anti-flash: lê localStorage antes da hidratação React para evitar piscar claro/escuro */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('sb-theme');if(t!=='dark')document.documentElement.classList.add('light');}catch(e){}})()`,
+            __html: `(function(){try{var t=localStorage.getItem('sb-theme');if(t==='light')document.documentElement.classList.add('light');}catch(e){}})()`,
           }}
         />
       </head>
       <body className="min-h-full flex flex-col bg-gray-950" suppressHydrationWarning>
-        <div className="ceu" aria-hidden="true"><span /><span /><span /><span /></div>
+        
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>
