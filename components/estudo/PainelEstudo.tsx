@@ -45,7 +45,7 @@ export default function PainelEstudo({ painel }: { painel: Painel }) {
     <section className="mb-8 space-y-4">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
         {/* Meta do dia */}
-        <div className="glass p-4">
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Meta de hoje</span>
             <button onClick={() => setEditando((v) => !v)} className="text-[11px] text-gray-500 hover:text-emerald-400">
@@ -64,7 +64,7 @@ export default function PainelEstudo({ painel }: { painel: Painel }) {
         </div>
 
         {/* Sequência + semana */}
-        <div className="glass p-4">
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
           <div className="flex items-center justify-between mb-2">
             <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Sequência</span>
             {prova_ && <span className="text-[11px] text-amber-400 font-semibold">{prova_}</span>}
@@ -90,7 +90,7 @@ export default function PainelEstudo({ painel }: { painel: Painel }) {
         <div className="grid grid-cols-1 gap-2">
           <Link
             href="/estudo/revisao"
-            className="flex items-center justify-between glass glass-hover px-4 py-3 transition-colors"
+            className="flex items-center justify-between bg-gray-900 border border-gray-800 hover:border-emerald-500/50 rounded-2xl px-4 py-3 transition-colors"
           >
             <span className="text-sm font-semibold text-white">🃏 Revisão de hoje</span>
             <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${painel.revisoesDevidas ? "bg-emerald-500/20 text-emerald-400" : "bg-gray-800 text-gray-500"}`}>
@@ -99,7 +99,7 @@ export default function PainelEstudo({ painel }: { painel: Painel }) {
           </Link>
           <Link
             href="/estudo/erros"
-            className="flex items-center justify-between glass glass-hover px-4 py-3 transition-colors"
+            className="flex items-center justify-between bg-gray-900 border border-gray-800 hover:border-red-500/50 rounded-2xl px-4 py-3 transition-colors"
           >
             <span className="text-sm font-semibold text-white">📕 Caderno de erros</span>
             <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${painel.errosAbertos ? "bg-red-500/20 text-red-400" : "bg-gray-800 text-gray-500"}`}>
@@ -108,7 +108,7 @@ export default function PainelEstudo({ painel }: { painel: Painel }) {
           </Link>
           <Link
             href="/estudo/simulado"
-            className="flex items-center justify-between glass glass-hover px-4 py-3 transition-colors"
+            className="flex items-center justify-between bg-gray-900 border border-gray-800 hover:border-violet-500/50 rounded-2xl px-4 py-3 transition-colors"
           >
             <span className="text-sm font-semibold text-white">⚖️ Simulado CEBRASPE</span>
             <span className="text-xs text-gray-500">→</span>
@@ -117,7 +117,7 @@ export default function PainelEstudo({ painel }: { painel: Painel }) {
       </div>
 
       {editando && (
-        <div className="glass p-4 flex flex-col sm:flex-row gap-3 sm:items-end">
+        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 flex flex-col sm:flex-row gap-3 sm:items-end">
           <label className="text-xs text-gray-400">
             Meta diária (atividades)
             <input

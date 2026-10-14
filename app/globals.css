@@ -12,10 +12,10 @@
   --sh-ink: #292827;
   --sh-stone: #666666;
   --sh-mist: #e3e3e2;
-  --sh-wine: #421d24;
-  --sh-lilac: #d4c7ff;
-  --sh-violet: #714cb6;
-  --sh-lagoon: #0c4243;
+  --sh-wine: #12305e;
+  --sh-lilac: #cfe3fb;
+  --sh-violet: #2f6fbd;
+  --sh-lagoon: #0f3a66;
 
   --background: var(--sh-canvas);
   --foreground: var(--sh-ink);
@@ -216,10 +216,10 @@ html.light .bg-gradient-to-br.from-gray-950 {
   inset: 0;
   overflow: hidden;
   background:
-    radial-gradient(80% 60% at 15% 10%, rgba(120, 130, 235, 0.9), transparent 70%),
-    radial-gradient(70% 60% at 90% 15%, rgba(150, 120, 220, 0.85), transparent 70%),
-    radial-gradient(90% 70% at 70% 100%, rgba(235, 140, 170, 0.85), transparent 70%),
-    linear-gradient(180deg, #5f6fc4 0%, #8f86d0 55%, #d79bbd 100%);
+    radial-gradient(80% 60% at 15% 5%, rgba(40, 110, 200, 0.85), transparent 70%),
+    radial-gradient(70% 60% at 90% 10%, rgba(30, 140, 220, 0.75), transparent 70%),
+    radial-gradient(90% 70% at 70% 100%, rgba(150, 205, 245, 0.9), transparent 70%),
+    linear-gradient(180deg, #1f4f9c 0%, #3b82c8 50%, #a9d4f2 100%);
 }
 .ceu-hero span {
   position: absolute;
@@ -229,14 +229,14 @@ html.light .bg-gradient-to-br.from-gray-950 {
   border-radius: 50%;
   filter: blur(40px);
   opacity: 0.55;
-  background: radial-gradient(closest-side, rgba(255, 240, 250, 0.95), rgba(255, 240, 250, 0));
+  background: radial-gradient(closest-side, rgba(240, 249, 255, 0.95), rgba(240, 249, 255, 0));
   animation: deriva 80s linear infinite;
   animation-delay: var(--d, 0s);
 }
 .ceu-hero span:nth-child(1) { top: 8%;  --d: -10s; }
-.ceu-hero span:nth-child(2) { top: 32%; --d: -50s; width: 100vw; height: 36vh; animation-duration: 120s; background: radial-gradient(closest-side, rgba(255, 205, 225, 0.9), rgba(255, 205, 225, 0)); }
+.ceu-hero span:nth-child(2) { top: 32%; --d: -50s; width: 100vw; height: 36vh; animation-duration: 120s; background: radial-gradient(closest-side, rgba(200, 230, 255, 0.9), rgba(200, 230, 255, 0)); }
 .ceu-hero span:nth-child(3) { top: 58%; --d: -30s; animation-duration: 100s; }
-.ceu-hero span:nth-child(4) { top: 78%; --d: -75s; width: 110vw; animation-duration: 140s; background: radial-gradient(closest-side, rgba(190, 170, 255, 0.9), rgba(190, 170, 255, 0)); }
+.ceu-hero span:nth-child(4) { top: 78%; --d: -75s; width: 110vw; animation-duration: 140s; background: radial-gradient(closest-side, rgba(150, 200, 250, 0.9), rgba(150, 200, 250, 0)); }
 @keyframes deriva {
   from { transform: translateX(0); }
   to   { transform: translateX(230vw); }
@@ -247,7 +247,7 @@ html.light .bg-gradient-to-br.from-gray-950 {
 
 /* Vidro sobre o céu (hero): translúcido, como no site de referência */
 .glass-ceu {
-  background: rgba(80, 70, 140, 0.34);
+  background: rgba(20, 60, 120, 0.32);
   backdrop-filter: blur(18px) saturate(1.3);
   -webkit-backdrop-filter: blur(18px) saturate(1.3);
   border: 1px solid rgba(255, 255, 255, 0.22);
@@ -267,3 +267,9 @@ html.light .bg-gradient-to-br.from-gray-950 {
 }
 .flutuar-lento { animation: flutuar-lento 8s ease-in-out infinite; animation-delay: var(--d, 0s); }
 @media (prefers-reduced-motion: reduce) { .flutuar-lento { animation: none; } }
+
+/* .glass em tema claro (usado no mapa de estudo) */
+html.light .glass {
+  background: rgba(255, 255, 255, 0.62);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+}

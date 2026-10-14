@@ -20,8 +20,8 @@ export default async function SimuladoPage({ searchParams }: Props) {
   });
 
   return (
-    <div className="min-h-screen text-white">
-      <header className="h-14 glass !rounded-none !border-x-0 !border-t-0 flex items-center px-4 gap-3">
+    <div className="min-h-screen bg-gray-950 text-white">
+      <header className="h-14 bg-gray-900 border-b border-gray-800 flex items-center px-4 gap-3">
         <Link href="/estudo" className="text-gray-400 hover:text-white text-sm">← Início</Link>
         <h1 className="font-bold text-sm">Simulado</h1>
       </header>

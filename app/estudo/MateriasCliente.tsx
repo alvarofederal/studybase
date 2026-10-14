@@ -83,7 +83,7 @@ export default function MateriasCliente({ materias, statusInicial }: Props) {
           return (
             <div
               key={m.id}
-              className="flex flex-col glass overflow-hidden"
+              className="flex flex-col bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden"
             >
               {/* Barra topo */}
               <div className={`h-1 ${isPendente ? "bg-amber-500/60" : isRejeitada ? "bg-red-500/40" : "bg-gray-700"}`} />

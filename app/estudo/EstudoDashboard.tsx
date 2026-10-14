@@ -65,7 +65,7 @@ function SidebarContent({
       {/* Logo */}
       <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-2">
-          <span className="text-base font-semibold tracking-tight text-white">
+          <span className="text-base font-black bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent">
             StudyBase
           </span>
           <span className="text-[9px] text-gray-600 font-mono bg-gray-800/80 border border-gray-700 px-1.5 py-0.5 rounded">
@@ -224,10 +224,10 @@ export default function EstudoDashboard({
   };
 
   return (
-    <div className="h-screen text-white flex flex-col overflow-hidden">
+    <div className="h-screen bg-gray-950 text-white flex flex-col overflow-hidden">
 
       {/* ── Top bar (sempre visível) ────────────────────────── */}
-      <header className="glass !rounded-none !border-x-0 !border-t-0 h-14 flex items-center px-4 gap-3 shrink-0 z-20">
+      <header className="h-14 bg-gray-900 border-b border-gray-800 flex items-center px-4 gap-3 shrink-0 z-20">
         {/* Hambúrguer — só mobile */}
         <button
           onClick={() => setSidebarAberta(true)}
@@ -238,7 +238,7 @@ export default function EstudoDashboard({
             <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
           </svg>
         </button>
-        <span className="text-base font-semibold tracking-tight text-white flex-1">
+        <span className="text-base font-black bg-gradient-to-r from-emerald-400 to-teal-400 bg-clip-text text-transparent flex-1">
           StudyBase
         </span>
         {/* Avatar + nome → perfil | toggle tema | botão Sair */}
@@ -276,7 +276,7 @@ export default function EstudoDashboard({
       <div className="flex flex-1 overflow-hidden">
 
         {/* ══ SIDEBAR DESKTOP (sempre visível em lg+) ══════════ */}
-        <aside className="glass !rounded-none !border-y-0 !border-l-0 hidden lg:flex lg:flex-col w-64 xl:w-72 shrink-0 overflow-hidden">
+        <aside className="hidden lg:flex lg:flex-col w-64 xl:w-72 shrink-0 bg-gray-900 border-r border-gray-800 overflow-hidden">
           <SidebarContent {...sidebarProps} />
         </aside>
 
@@ -289,7 +289,7 @@ export default function EstudoDashboard({
         )}
         <div
           className={[
-            "glass !rounded-none fixed inset-y-0 left-0 z-40 w-72",
+            "fixed inset-y-0 left-0 z-40 w-72 bg-gray-900 border-r border-gray-800",
             "flex flex-col lg:hidden",
             "transform transition-transform duration-300 ease-in-out",
             sidebarAberta ? "translate-x-0" : "-translate-x-full",
@@ -315,7 +315,7 @@ export default function EstudoDashboard({
             {/* Saudação + mini-stats (desktop) */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
               <div>
-                <h1 className="text-3xl sm:text-4xl font-[460] text-white">
+                <h1 className="text-2xl sm:text-3xl font-black text-white">
                   Olá, {primeiroNome}! 👋
                 </h1>
                 <p className="text-gray-500 text-sm mt-1">
@@ -330,7 +330,7 @@ export default function EstudoDashboard({
                   { v: totalQuizzes,             l: "Questões",   color: "text-violet-400"  },
                   { v: totalFlashcards,          l: "Flashcards", color: "text-teal-400"    },
                 ].map(({ v, l, color }) => (
-                  <div key={l} className="glass flutuar px-4 py-3 text-center">
+                  <div key={l} className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 text-center">
                     <div className={`text-xl font-black ${color}`}>{v}</div>
                     <div className="text-[10px] text-gray-500 mt-0.5">{l}</div>
                   </div>
@@ -346,7 +346,7 @@ export default function EstudoDashboard({
                 { v: totalQuizzes,             l: "Questões", icon: "🧠" },
                 { v: totalFlashcards,          l: "Cards",    icon: "🃏" },
               ].map(({ v, l, icon }) => (
-                <div key={l} className="glass p-2.5 text-center">
+                <div key={l} className="bg-gray-900 border border-gray-800 rounded-xl p-2.5 text-center">
                   <div className="text-base">{icon}</div>
                   <div className="text-lg font-bold text-white">{v}</div>
                   <div className="text-[9px] text-gray-500">{l}</div>
@@ -360,18 +360,13 @@ export default function EstudoDashboard({
               <section className="mb-10">
                 <div className="mb-4 flex flex-wrap items-end justify-between gap-2">
                   <div>
-                    <h2 className="text-xl font-[460] text-white">Mapa de estudo</h2>
-                    <p className="mt-0.5 text-xs text-gray-500">
+                    <h2 className="text-lg font-bold text-white">Mapa de estudo</h2>
+                    <p className="mt-0.5 text-xs text-gray-600">
                       Passe o mouse para ver o nome; clique para ir direto ao assunto.
                     </p>
                   </div>
-                  <div className="flex gap-2 text-[11px] text-gray-500">
-                    <span className="chip">● matéria</span>
-                    <span className="chip">● bloco</span>
-                    <span className="chip">· tópico</span>
-                  </div>
                 </div>
-                <div className="glass overflow-hidden">
+                <div className="overflow-hidden rounded-2xl border border-gray-800 bg-gray-900">
                   <MapaMaterias
                     materias={materiasComAcesso.map((m) => ({
                       id: m.id,
@@ -394,7 +389,7 @@ export default function EstudoDashboard({
               <section className="mb-10">
                 <div className="flex items-center justify-between mb-5">
                   <div>
-                    <h2 className="text-xl font-[460] text-white">Suas matérias</h2>
+                    <h2 className="text-lg font-bold text-white">Suas matérias</h2>
                     <p className="text-gray-600 text-xs mt-0.5">
                       {materiasComAcesso.length} liberada{materiasComAcesso.length !== 1 ? "s" : ""}
                     </p>
@@ -411,7 +406,7 @@ export default function EstudoDashboard({
                 </div>
               </section>
             ) : (
-              <div className="glass text-center py-16 mb-10">
+              <div className="text-center py-16 bg-gray-900 border border-gray-800 rounded-2xl mb-10">
                 <div className="text-5xl mb-4">📚</div>
                 <h3 className="text-white font-semibold mb-2">Nenhuma matéria liberada ainda</h3>
                 <p className="text-gray-500 text-sm max-w-xs mx-auto leading-relaxed">
@@ -424,7 +419,7 @@ export default function EstudoDashboard({
             {materiasParaSolicitar.length > 0 && (
               <section>
                 <div className="mb-5">
-                  <h2 className="text-xl font-[460] text-white">Solicitar acesso</h2>
+                  <h2 className="text-lg font-bold text-white">Solicitar acesso</h2>
                   <p className="text-gray-600 text-xs mt-0.5">
                     Clique em uma matéria para solicitar — o administrador será notificado.
                   </p>
@@ -483,10 +478,9 @@ function MateriaCard({
   return (
     <Link
       href={`/estudo/${materia.slug}`}
-      className="glass glass-hover flutuar group flex flex-col overflow-hidden"
-      style={{ "--d": `${(materia.nome.length % 7) * 0.4}s` } as React.CSSProperties}
+      className="group flex flex-col bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden hover:border-emerald-500/50 active:border-emerald-500/50 transition-all hover:shadow-[0_0_30px_-8px_rgba(16,185,129,0.25)]"
     >
-      <div className={`h-1 bg-gradient-to-r ${expInfo?.cor === "red" ? "from-red-400 to-rose-300" : "from-violet-400 via-blue-300 to-pink-300"}`} />
+      <div className={`h-1 bg-gradient-to-r ${expInfo?.cor === "red" ? "from-red-500 to-rose-400" : "from-emerald-500 to-teal-400"}`} />
 
       <div className="flex-1 p-4 sm:p-5">
         <div className="flex items-start gap-3 mb-4">
@@ -531,7 +525,7 @@ function MateriaCard({
         </div>
       </div>
 
-      <div className="border-t border-white/10 px-4 sm:px-5 py-3 flex items-center justify-between">
+      <div className="border-t border-gray-800 px-4 sm:px-5 py-3 flex items-center justify-between bg-gray-900/30">
         <div className="flex items-center gap-1.5">
           {expInfo ? (
             <>

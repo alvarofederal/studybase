@@ -64,10 +64,10 @@ export default async function Home() {
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
             <a
               href="#materias"
-              className="inline-flex min-h-12 items-center gap-3 rounded-2xl bg-[#421d24] px-6 font-medium text-white transition-colors hover:bg-[#5a2832]"
+              className="inline-flex min-h-12 items-center gap-3 rounded-2xl bg-[#12305e] px-6 font-medium text-white transition-colors hover:bg-[#1d4585]"
             >
               Começar a estudar
-              <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-[#8a6cf0] to-[#4e63d6]">→</span>
+              <span className="grid h-8 w-8 place-items-center rounded-lg bg-gradient-to-br from-[#4fa3f0] to-[#2f6fbd]">→</span>
             </a>
             <a href="#como-funciona" className="glass-ceu px-6 py-3 text-sm font-medium transition-colors hover:bg-white/20">
               Como funciona
@@ -228,7 +228,7 @@ export default async function Home() {
                         </div>
                       ))}
                     </div>
-                    <span className="mt-auto text-sm text-[#714cb6] group-hover:underline">Estudar agora →</span>
+                    <span className="mt-auto text-sm text-[#2f6fbd] group-hover:underline">Estudar agora →</span>
                   </Link>
                 );
               })}
@@ -240,14 +240,14 @@ export default async function Home() {
       {/* ══ CTA ═════════════════════════════════════════════════════ */}
       <section className="py-20">
         <div className="mx-auto max-w-[1200px] px-6">
-          <div className="rounded-[24px] bg-[#0c4243] px-8 py-16 text-center text-white">
+          <div className="rounded-[24px] bg-[#0f3a66] px-8 py-16 text-center text-white">
             <h2 className="text-4xl md:text-5xl">Pronto para começar?</h2>
             <p className="mx-auto mt-4 max-w-lg text-white/80">
               Escolha uma matéria e comece agora mesmo.
             </p>
             <a
               href="#materias"
-              className="mt-8 inline-flex min-h-12 items-center rounded-2xl bg-[#421d24] px-7 font-medium text-white transition-colors hover:bg-[#5a2832]"
+              className="mt-8 inline-flex min-h-12 items-center rounded-2xl bg-[#12305e] px-7 font-medium text-white transition-colors hover:bg-[#1d4585]"
             >
               Ver matérias disponíveis →
             </a>
@@ -256,7 +256,7 @@ export default async function Home() {
       </section>
 
       {/* ══ FOOTER ══════════════════════════════════════════════════ */}
-      <footer className="bg-[#421d24] py-10 text-white/85">
+      <footer className="bg-[#12305e] py-10 text-white/85">
         <div className="mx-auto flex max-w-[1200px] flex-col items-center justify-between gap-4 px-6 sm:flex-row">
           <span className="text-sm uppercase tracking-[0.14em]">StudyBase <span className="normal-case tracking-normal text-white/60">— estudos de base para concursos</span></span>
           <div className="flex items-center gap-6 text-sm text-white/70">

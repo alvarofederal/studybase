@@ -22,7 +22,7 @@ export default function LandingUserButtons({ role }: Props) {
     <div className="flex items-center gap-2">
       <Link
         href={destino}
-        className="rounded-2xl bg-[#421d24] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#5a2832]"
+        className="rounded-2xl bg-[#12305e] px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#1d4585]"
       >
         Acessar →
       </Link>
