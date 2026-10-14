@@ -1,5 +1,6 @@
 "use client";
 
+import EditorMarkdown from "@/components/admin/EditorMarkdown";
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -873,7 +874,7 @@ export default function MateriaDetailPage() {
                     className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-1.5 text-sm text-white focus:outline-none focus:border-emerald-500"
                   />
                   <textarea
-                    placeholder="Conteúdo em Markdown *"
+                    placeholder="Conteúdo em Markdown * (para editar com pré-visualização, crie o tópico e clique em Editar)"
                     value={formTop.conteudo}
                     onChange={(e) => setFormTop((f) => ({ ...f, conteudo: e.target.value }))}
                     rows={4}
@@ -1030,13 +1031,12 @@ export default function MateriaDetailPage() {
                     </div>
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">Conteúdo (Markdown) *</label>
-                      <textarea
+                      <EditorMarkdown
                         value={editTopico.conteudo}
-                        onChange={(e) => setEditTopico((f) => ({ ...f, conteudo: e.target.value }))}
-                        required
-                        rows={14}
-                        spellCheck={false}
-                        className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white font-mono focus:outline-none focus:border-teal-500 resize-y"
+                        onChange={(v) => setEditTopico((f) => ({ ...f, conteudo: v }))}
+                        salvo={topicoSel.conteudo}
+                        rascunhoKey={`topico:${topicoSel.id}`}
+                        onSalvar={() => salvarTopico({ preventDefault() {} } as React.FormEvent)}
                       />
                     </div>
                     {erro && (
