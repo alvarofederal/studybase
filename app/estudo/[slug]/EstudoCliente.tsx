@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
+import ComentariosQuestao from "@/components/estudo/ComentariosQuestao";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 /* ─── Tipos ─────────────────────────────────────────────────────────────── */
@@ -803,6 +804,9 @@ export default function EstudoCliente({
                                       💡 {quiz.explicacao}
                                     </div>
                                   )}
+
+                                  {/* Discussão da questão (só depois de responder) */}
+                                  <ComentariosQuestao quizId={quiz.id} />
                                 </div>
                               )}
                             </div>
