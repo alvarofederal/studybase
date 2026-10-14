@@ -58,6 +58,9 @@ export default function SolicitacoesPage() {
   const [aba,         setAba]         = useState<Status>("PENDENTE");
   const [lista,       setLista]       = useState<Solicitacao[]>([]);
   const [processando, setProcessando] = useState<string | null>(null);
+  const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
+  const [aprovandoLote, setAprovandoLote] = useState(false);
+  const [msgLote, setMsgLote] = useState<string | null>(null);
   const [contagens,   setContagens]   = useState<Record<Status, number>>({
     PENDENTE: 0, APROVADA: 0, REJEITADA: 0,
   });
@@ -115,8 +118,11 @@ export default function SolicitacoesPage() {
       body:    JSON.stringify({ acao }),
     });
     setProcessando(null);
+    await recarregar();
+  }
 
-    // Recarrega lista + contagens de forma assíncrona
+  // Recarrega lista + contagens de forma assíncrona
+  async function recarregar() {
     const [res, resP, resA, resR] = await Promise.all([
       fetch(`/api/admin/solicitacoes?status=${aba}`).then((r) => r.json()),
       fetch("/api/admin/solicitacoes?status=PENDENTE").then((r)  => r.json()),
@@ -131,7 +137,49 @@ export default function SolicitacoesPage() {
       APROVADA:  (resA.solicitacoes ?? []).length,
       REJEITADA: (resR.solicitacoes ?? []).length,
     });
+    // descarta da seleção o que já não está na lista
+    setSelecionadas((prev) => new Set(items.filter((i) => prev.has(i.id)).map((i) => i.id)));
   }
+
+  // ── Aprovar em bloco (selecionadas ou todas as pendentes) ────────────────
+  async function aprovarLote(ids: string[]) {
+    if (ids.length === 0) return;
+    const ok = window.confirm(
+      `Aprovar ${ids.length} solicitaç${ids.length === 1 ? "ão" : "ões"}? Cada acesso valerá por 30 dias.`,
+    );
+    if (!ok) return;
+    setAprovandoLote(true);
+    setMsgLote(null);
+    try {
+      const res = await fetch("/api/admin/solicitacoes/lote", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setMsgLote(data.error ?? "Não foi possível aprovar em bloco.");
+      } else {
+        setMsgLote(`${data.aprovadas} solicitaç${data.aprovadas === 1 ? "ão aprovada" : "ões aprovadas"}.`);
+        setSelecionadas(new Set());
+      }
+    } catch {
+      setMsgLote("Erro de conexão. Tente novamente.");
+    } finally {
+      await recarregar();
+      setAprovandoLote(false);
+    }
+  }
+
+  function alternar(id: string) {
+    setSelecionadas((prev) => {
+      const n = new Set(prev);
+      if (n.has(id)) n.delete(id); else n.add(id);
+      return n;
+    });
+  }
+
+  const todasSelecionadas = lista.length > 0 && lista.every((s) => selecionadas.has(s.id));
 
   // ── Render ────────────────────────────────────────────────────────────────
   return (
@@ -168,7 +216,7 @@ export default function SolicitacoesPage() {
           {ABAS.map((a) => (
             <button
               key={a.value}
-              onClick={() => { setAbaCarregada(null); setAba(a.value); }}
+              onClick={() => { setAbaCarregada(null); setAba(a.value); setSelecionadas(new Set()); setMsgLote(null); }}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                 aba === a.value
                   ? a.value === "PENDENTE"
@@ -194,6 +242,43 @@ export default function SolicitacoesPage() {
             </button>
           ))}
         </div>
+
+        {/* Aprovação em bloco (só na aba Pendentes) */}
+        {aba === "PENDENTE" && !carregando && lista.length > 0 && (
+          <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-gray-800 bg-gray-900 px-4 py-3">
+            <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-300">
+              <input
+                type="checkbox"
+                checked={todasSelecionadas}
+                onChange={() =>
+                  setSelecionadas(todasSelecionadas ? new Set() : new Set(lista.map((s) => s.id)))
+                }
+                className="h-4 w-4 accent-emerald-500"
+              />
+              Selecionar todas
+            </label>
+            <span className="text-xs text-gray-500">
+              {selecionadas.size} de {lista.length} selecionada{lista.length !== 1 ? "s" : ""}
+            </span>
+            <div className="ml-auto flex flex-wrap items-center gap-2">
+              {msgLote && <span className="text-xs text-gray-400">{msgLote}</span>}
+              <button
+                onClick={() => aprovarLote([...selecionadas])}
+                disabled={selecionadas.size === 0 || aprovandoLote}
+                className="rounded-lg border border-emerald-600/40 bg-emerald-700/30 px-3 py-1.5 text-xs font-medium text-emerald-400 transition hover:bg-emerald-700/60 hover:text-emerald-300 disabled:opacity-40"
+              >
+                ✓ Aprovar selecionadas ({selecionadas.size})
+              </button>
+              <button
+                onClick={() => aprovarLote(lista.map((s) => s.id))}
+                disabled={aprovandoLote}
+                className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-emerald-500 disabled:opacity-40"
+              >
+                ✓✓ Aprovar todas ({lista.length})
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Lista */}
         <div className="bg-gray-900 border border-gray-800 rounded-2xl overflow-hidden">
@@ -224,6 +309,16 @@ export default function SolicitacoesPage() {
                   key={s.id}
                   className="flex items-center gap-4 px-6 py-4 hover:bg-gray-800/30 transition"
                 >
+                  {aba === "PENDENTE" && (
+                    <input
+                      type="checkbox"
+                      checked={selecionadas.has(s.id)}
+                      onChange={() => alternar(s.id)}
+                      aria-label={`Selecionar ${s.user.nome} — ${s.materia.nome}`}
+                      className="h-4 w-4 shrink-0 accent-emerald-500"
+                    />
+                  )}
+
                   {/* Ícone matéria */}
                   <div className="w-10 h-10 rounded-xl bg-gray-800 border border-gray-700 flex items-center justify-center text-xl shrink-0">
                     {s.materia.icone ?? "📖"}
