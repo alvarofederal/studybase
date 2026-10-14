@@ -38,9 +38,23 @@ export async function GET(req: NextRequest) {
     }
   }
 
+  // Para pendentes, quantas matérias ativas o aluno já tem (limite de 3)
+  const ativasPorUsuario: Record<string, number> = {};
+  if (status === "PENDENTE" && solicitacoes.length > 0) {
+    const agora = new Date();
+    const userIds = [...new Set(solicitacoes.map((s) => s.userId))];
+    const grupos = await prisma.userMateria.groupBy({
+      by: ["userId"],
+      where: { userId: { in: userIds }, OR: [{ expiresAt: null }, { expiresAt: { gt: agora } }] },
+      _count: { _all: true },
+    });
+    for (const g of grupos) ativasPorUsuario[g.userId] = g._count._all;
+  }
+
   const resultado = solicitacoes.map((s) => ({
     ...s,
     expiresAt: expiresAtMap[`${s.userId}_${s.materiaId}`] ?? null,
+    ativasDoAluno: ativasPorUsuario[s.userId] ?? 0,
   }));
 
   return NextResponse.json({ solicitacoes: resultado });

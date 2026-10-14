@@ -19,14 +19,26 @@ interface MateriaInfo {
 interface Props {
   materias: MateriaInfo[];
   statusInicial: Record<string, string>;
+  /** Matérias com acesso ativo (ocupam vaga junto com as solicitações pendentes) */
+  vagasAtivas?: number;
 }
 
-export default function MateriasCliente({ materias, statusInicial }: Props) {
+const LIMITE_MATERIAS = 3;
+
+export default function MateriasCliente({ materias, statusInicial, vagasAtivas = 0 }: Props) {
   const [status, setStatus]         = useState<Record<string, string>>(statusInicial);
   const [carregando, setCarregando] = useState<string | null>(null);
   const [erro, setErro]             = useState<string | null>(null);
 
+  const pendentes = materias.filter((m) => status[m.id] === "PENDENTE").length;
+  const vagasUsadas = vagasAtivas + pendentes;
+  const semVagas = vagasUsadas >= LIMITE_MATERIAS;
+
   async function solicitar(materiaId: string) {
+    if (semVagas) {
+      setErro(`Você já usou suas ${LIMITE_MATERIAS} vagas (${vagasAtivas} ativa${vagasAtivas === 1 ? "" : "s"} + ${pendentes} pendente${pendentes === 1 ? "" : "s"}). Não é possível solicitar mais matérias.`);
+      return;
+    }
     setErro(null);
     setCarregando(materiaId);
     try {
@@ -48,6 +60,16 @@ export default function MateriasCliente({ materias, statusInicial }: Props) {
 
   return (
     <div>
+      {semVagas && !erro && (
+        <div className="mb-5 flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3">
+          <span className="mt-0.5 shrink-0 text-base">🔒</span>
+          <p className="text-sm leading-snug text-amber-400">
+            Você já usou suas {LIMITE_MATERIAS} vagas ({vagasAtivas} ativa{vagasAtivas === 1 ? "" : "s"} + {pendentes} pendente{pendentes === 1 ? "" : "s"}).
+            Para pedir outra matéria, aguarde a aprovação ou remova uma em Meu Perfil.
+          </p>
+        </div>
+      )}
+
       {/* Banner de erro (ex: limite de matérias) */}
       {erro && (
         <div className="flex items-start gap-3 mb-5 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-3">
@@ -149,7 +171,7 @@ export default function MateriasCliente({ materias, statusInicial }: Props) {
                     </div>
                     <button
                       onClick={() => solicitar(m.id)}
-                      disabled={isLoading}
+                      disabled={isLoading || semVagas}
                       className="text-xs text-gray-400 hover:text-white transition-colors disabled:opacity-50"
                     >
                       {isLoading ? "..." : "Tentar novamente"}
@@ -158,7 +180,8 @@ export default function MateriasCliente({ materias, statusInicial }: Props) {
                 ) : (
                   <button
                     onClick={() => solicitar(m.id)}
-                    disabled={isLoading}
+                    disabled={isLoading || semVagas}
+                    title={semVagas ? "Limite de 3 matérias atingido" : undefined}
                     className="w-full flex items-center justify-center gap-2 bg-gray-700 hover:bg-emerald-700/60 border border-gray-600 hover:border-emerald-500/50 text-gray-300 hover:text-white text-xs font-medium py-2 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoading ? (

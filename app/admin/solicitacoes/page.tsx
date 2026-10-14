@@ -16,6 +16,7 @@ interface Solicitacao {
   status: Status;
   createdAt: string;
   expiresAt: string | null;
+  ativasDoAluno?: number;
   user: { id: string; nome: string; email: string };
   materia: { id: string; nome: string; icone: string | null; slug: string };
   _expiry: ExpiryInfo | null; // pré-computado ao carregar, não durante render
@@ -112,11 +113,16 @@ export default function SolicitacoesPage() {
   // ── Aprovar / rejeitar / renovar ─────────────────────────────────────────
   async function agir(id: string, acao: "aprovar" | "rejeitar" | "renovar") {
     setProcessando(id);
-    await fetch(`/api/admin/solicitacoes/${id}`, {
+    setMsgLote(null);
+    const res = await fetch(`/api/admin/solicitacoes/${id}`, {
       method:  "PUT",
       headers: { "Content-Type": "application/json" },
       body:    JSON.stringify({ acao }),
     });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setMsgLote(data.error ?? "Não foi possível concluir a ação.");
+    }
     setProcessando(null);
     await recarregar();
   }
@@ -246,6 +252,10 @@ export default function SolicitacoesPage() {
           ))}
         </div>
 
+        {msgLote && (aba !== "PENDENTE" || carregando || lista.length === 0) && (
+          <div className="mb-3 rounded-xl border border-amber-700/40 bg-amber-900/30 px-4 py-3 text-sm text-amber-400">{msgLote}</div>
+        )}
+
         {/* Aprovação em bloco (só na aba Pendentes) */}
         {aba === "PENDENTE" && !carregando && lista.length > 0 && (
           <div className="mb-3 flex flex-wrap items-center gap-3 rounded-xl border border-gray-800 bg-gray-900 px-4 py-3">
@@ -264,7 +274,7 @@ export default function SolicitacoesPage() {
               {selecionadas.size} de {lista.length} selecionada{lista.length !== 1 ? "s" : ""}
             </span>
             <div className="ml-auto flex flex-wrap items-center gap-2">
-              {msgLote && <span className="text-xs text-gray-400">{msgLote}</span>}
+              {msgLote && <span className="rounded-lg bg-amber-900/30 px-2 py-1 text-xs text-amber-400">{msgLote}</span>}
               <button
                 onClick={() => aprovarLote([...selecionadas])}
                 disabled={selecionadas.size === 0 || aprovandoLote}
@@ -341,6 +351,11 @@ export default function SolicitacoesPage() {
                         <span className="text-gray-600 ml-1">({s.user.email})</span>
                       </p>
                     </div>
+                    {s.status === "PENDENTE" && (s.ativasDoAluno ?? 0) >= 3 && (
+                      <p className="mt-1 text-[11px] font-medium text-amber-400">
+                        ⚠ Aluno já tem 3 matérias ativas — não é possível aprovar
+                      </p>
+                    )}
                   </div>
 
                   {/* Data + validade (pré-computada, sem Date.now() no render) */}
@@ -365,7 +380,8 @@ export default function SolicitacoesPage() {
                       <>
                         <button
                           onClick={() => agir(s.id, "aprovar")}
-                          disabled={processando === s.id}
+                          disabled={processando === s.id || (s.ativasDoAluno ?? 0) >= 3}
+                          title={(s.ativasDoAluno ?? 0) >= 3 ? "O aluno já tem 3 matérias ativas" : undefined}
                           className="flex items-center gap-1.5 bg-emerald-700/30 hover:bg-emerald-700/60 border border-emerald-600/40 text-emerald-400 hover:text-emerald-300 text-xs font-medium px-3 py-1.5 rounded-lg transition disabled:opacity-40"
                         >
                           {processando === s.id

@@ -438,6 +438,7 @@ export default function EstudoDashboard({
                     blocos: m.blocos.map((b) => ({ id: b.id, nome: b.nome })),
                   }))}
                   statusInicial={statusSolicitacao}
+                  vagasAtivas={materiasComAcesso.length}
                 />
               </section>
             )}
