@@ -160,7 +160,10 @@ export default function SolicitacoesPage() {
       if (!res.ok) {
         setMsgLote(data.error ?? "Não foi possível aprovar em bloco.");
       } else {
-        setMsgLote(`${data.aprovadas} solicitaç${data.aprovadas === 1 ? "ão aprovada" : "ões aprovadas"}.`);
+        setMsgLote(
+          `${data.aprovadas} solicitaç${data.aprovadas === 1 ? "ão aprovada" : "ões aprovadas"}` +
+          (data.ignoradas > 0 ? `; ${data.ignoradas} ignorada${data.ignoradas === 1 ? "" : "s"} (aluno já tem 3 matérias ativas).` : "."),
+        );
         setSelecionadas(new Set());
       }
     } catch {

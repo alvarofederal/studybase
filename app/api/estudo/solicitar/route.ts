@@ -47,10 +47,15 @@ export async function POST(req: NextRequest) {
       ],
     },
   });
-  if (totalAtivas >= LIMITE_MATERIAS) {
+  // Solicitações pendentes (de outras matérias) também ocupam vaga: sem isso dava para
+  // pedir várias matérias de uma vez e estourar o limite quando o admin aprovasse.
+  const totalPendentes = await prisma.solicitacaoMateria.count({
+    where: { userId: session.sub, status: "PENDENTE", materiaId: { not: materiaId } },
+  });
+  if (totalAtivas + totalPendentes >= LIMITE_MATERIAS) {
     return NextResponse.json(
       {
-        error: `Limite de ${LIMITE_MATERIAS} matérias simultâneas atingido. Remova uma para poder solicitar outra.`,
+        error: `Limite de ${LIMITE_MATERIAS} matérias atingido (contando as solicitações pendentes). Aguarde a aprovação ou remova uma para solicitar outra.`,
         limiteMaterias: LIMITE_MATERIAS,
       },
       { status: 403 },

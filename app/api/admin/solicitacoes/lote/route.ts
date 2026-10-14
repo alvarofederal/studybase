@@ -5,6 +5,7 @@ import { getSession } from "@/lib/auth/session";
 export const dynamic = "force-dynamic";
 
 const MAX_LOTE = 500;
+const LIMITE_MATERIAS = 3;
 const TRINTA_DIAS_MS = 30 * 24 * 60 * 60 * 1000;
 
 // Aprovar várias solicitações pendentes de uma vez
@@ -36,9 +37,38 @@ export async function POST(req: NextRequest) {
   });
 
   const expiresAt = new Date(Date.now() + TRINTA_DIAS_MS);
+  const agora = new Date();
+
+  // Respeita o limite de 3 matérias ativas por aluno: aprova na ordem e ignora o excedente
+  const ativasPorUsuario = new Map<string, number>();
+  const userIds = [...new Set(pendentes.map((s) => s.userId))];
+  for (const userId of userIds) {
+    ativasPorUsuario.set(
+      userId,
+      await prisma.userMateria.count({
+        where: { userId, OR: [{ expiresAt: null }, { expiresAt: { gt: agora } }] },
+      }),
+    );
+  }
+  const aprovaveis: typeof pendentes = [];
+  let ignoradas = 0;
+  for (const s of pendentes) {
+    const ativas = ativasPorUsuario.get(s.userId) ?? 0;
+    const jaTem = await prisma.userMateria.findFirst({
+      where: {
+        userId: s.userId,
+        materiaId: s.materiaId,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: agora } }],
+      },
+      select: { id: true },
+    });
+    if (!jaTem && ativas >= LIMITE_MATERIAS) { ignoradas++; continue; }
+    if (!jaTem) ativasPorUsuario.set(s.userId, ativas + 1);
+    aprovaveis.push(s);
+  }
 
   await prisma.$transaction(
-    pendentes.flatMap((s) => [
+    aprovaveis.flatMap((s) => [
       prisma.solicitacaoMateria.update({ where: { id: s.id }, data: { status: "APROVADA" } }),
       prisma.userMateria.upsert({
         where: { userId_materiaId: { userId: s.userId, materiaId: s.materiaId } },
@@ -48,5 +78,5 @@ export async function POST(req: NextRequest) {
     ]),
   );
 
-  return NextResponse.json({ ok: true, aprovadas: pendentes.length });
+  return NextResponse.json({ ok: true, aprovadas: aprovaveis.length, ignoradas });
 }

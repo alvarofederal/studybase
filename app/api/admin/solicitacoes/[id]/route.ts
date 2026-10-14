@@ -51,6 +51,27 @@ export async function PUT(req: NextRequest, { params }: Params) {
   }
 
   if (acao === "aprovar") {
+    // Respeita o limite de matérias ativas simultâneas do aluno
+    const agora = new Date();
+    const jaTem = await prisma.userMateria.findFirst({
+      where: {
+        userId: solicitacao.userId,
+        materiaId: solicitacao.materiaId,
+        OR: [{ expiresAt: null }, { expiresAt: { gt: agora } }],
+      },
+    });
+    if (!jaTem) {
+      const ativas = await prisma.userMateria.count({
+        where: { userId: solicitacao.userId, OR: [{ expiresAt: null }, { expiresAt: { gt: agora } }] },
+      });
+      if (ativas >= 3) {
+        return NextResponse.json(
+          { error: "O aluno já tem 3 matérias ativas. Aguarde expirar ou revogue uma antes de aprovar." },
+          { status: 409 },
+        );
+      }
+    }
+
     // Acesso válido por 30 dias a partir de agora
     const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
