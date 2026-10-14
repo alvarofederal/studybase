@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import prisma from "@/lib/prisma";
@@ -41,11 +42,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Sessão única (alunos): o novo login derruba o aparelho anterior.
+    // Apaga os refresh tokens antigos e troca o sessionId; o aparelho antigo é
+    // desconectado no próximo sinal de vida (heartbeat) ou ao tentar renovar o token.
+    // Administradores ficam isentos para não se trancarem para fora.
+    let sid: string | undefined;
+    if (user.role === "USER") {
+      sid = randomUUID();
+      await prisma.$transaction([
+        prisma.refreshToken.deleteMany({ where: { userId: user.id } }),
+        prisma.user.update({ where: { id: user.id }, data: { sessionId: sid, lastSeenAt: new Date() } }),
+      ]);
+    }
+
     // Gera tokens
     const accessToken = await signAccessToken({
       sub: user.id,
       email: user.email,
       role: user.role,
+      sid,
     });
     const refreshTokenRaw = await signRefreshToken(user.id);
     const tokenHash = hashToken(refreshTokenRaw);

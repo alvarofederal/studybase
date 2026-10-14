@@ -44,6 +44,7 @@ export async function GET(req: NextRequest) {
       sub: user.id,
       email: user.email,
       role: user.role,
+      sid: user.role === "USER" ? user.sessionId ?? undefined : undefined,
     });
 
     // Garante que admin vai para /admin e user vai para /estudo

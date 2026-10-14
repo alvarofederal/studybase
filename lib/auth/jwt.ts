@@ -6,11 +6,13 @@ export interface JWTPayload {
   sub: string; // userId
   email: string;
   role: string;
+  /** Identificador da sessão atual do usuário (sessão única por aparelho) */
+  sid?: string;
 }
 
 // Access token — 5 minutos
 export async function signAccessToken(payload: JWTPayload): Promise<string> {
-  return new SignJWT({ email: payload.email, role: payload.role })
+  return new SignJWT({ email: payload.email, role: payload.role, ...(payload.sid ? { sid: payload.sid } : {}) })
     .setProtectedHeader({ alg: "HS256" })
     .setSubject(payload.sub)
     .setIssuedAt()
@@ -34,6 +36,7 @@ export async function verifyAccessToken(token: string): Promise<JWTPayload> {
     sub: payload.sub as string,
     email: payload.email as string,
     role: payload.role as string,
+    sid: typeof payload.sid === "string" ? payload.sid : undefined,
   };
 }
 

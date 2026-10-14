@@ -156,6 +156,8 @@ model User {
   ativo     Boolean  @default(true)
   metaDiaria Int     @default(20)   // atividades (questões + flashcards) por dia
   dataProva  DateTime?              // contagem regressiva no painel
+  sessionId  String?                // sessão única: o último login invalida os anteriores
+  lastSeenAt DateTime?              // presença: último sinal de vida (heartbeat)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

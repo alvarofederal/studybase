@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getAllMateriasData } from "@/lib/getMateriaData";
+import CardsPresenca from "@/components/admin/CardsPresenca";
 
 export const dynamic = "force-dynamic";
 
@@ -13,8 +14,25 @@ async function checkDb(): Promise<boolean> {
   }
 }
 
+async function contagensAdmin(): Promise<{ cadastrados: number; pendentes: number }> {
+  try {
+    const { default: prisma } = await import("@/lib/prisma");
+    const [cadastrados, pendentes] = await Promise.all([
+      prisma.user.count({ where: { role: "USER" } }),
+      prisma.solicitacaoMateria.count({ where: { status: "PENDENTE" } }),
+    ]);
+    return { cadastrados, pendentes };
+  } catch {
+    return { cadastrados: 0, pendentes: 0 };
+  }
+}
+
 export default async function AdminPage() {
-  const [dbOk, materias] = await Promise.all([checkDb(), getAllMateriasData()]);
+  const [dbOk, materias, { cadastrados, pendentes }] = await Promise.all([
+    checkDb(),
+    getAllMateriasData(),
+    contagensAdmin(),
+  ]);
 
   const totalBlocos     = materias.reduce((a, m) => a + m.blocos.length, 0);
   const totalTopicos    = materias.reduce((a, m) => a + m.blocos.reduce((b, bl) => b + bl.topicos.length, 0), 0);
@@ -62,8 +80,39 @@ export default async function AdminPage() {
         </div>
       )}
 
-      {/* Stats globais */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+      {/* Pessoas: cadastrados, online (LED) e pendências */}
+      <section className="mb-8">
+        <CardsPresenca cadastradosInicial={cadastrados} pendentes={pendentes} />
+      </section>
+
+      {/* Atalhos */}
+      <section className="mb-10">
+        <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-600">Atalhos</h2>
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {[
+            { href: "/admin/solicitacoes", icon: "📨", titulo: "Solicitações", desc: "Aprovar acessos" },
+            { href: "/admin/usuarios",     icon: "👥", titulo: "Usuários",     desc: "Gerenciar alunos" },
+            { href: "/admin/stats",        icon: "📊", titulo: "Estatísticas", desc: "Desempenho" },
+            { href: "/admin/materias",     icon: "📚", titulo: "Matérias",     desc: "Editar conteúdo" },
+          ].map((a) => (
+            <Link
+              key={a.href}
+              href={a.href}
+              className="flex items-center gap-3 rounded-xl border border-gray-800 bg-gray-900 px-4 py-3 transition hover:border-emerald-500/40 hover:bg-gray-800/60"
+            >
+              <span className="text-xl">{a.icon}</span>
+              <span className="min-w-0">
+                <span className="block text-sm font-medium text-white">{a.titulo}</span>
+                <span className="block truncate text-[11px] text-gray-500">{a.desc}</span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      {/* Conteúdo da plataforma */}
+      <h2 className="mb-3 text-xs font-semibold uppercase tracking-widest text-gray-600">Conteúdo da plataforma</h2>
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-10">
         {[
           { num: materias.length, label: "Matérias",   icon: "📚", color: "text-teal-400" },
           { num: totalBlocos,     label: "Blocos",      icon: "📦", color: "text-blue-400" },

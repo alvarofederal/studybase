@@ -57,6 +57,7 @@ export async function POST(_req: NextRequest) {
       sub: user.id,
       email: user.email,
       role: user.role,
+      sid: user.role === "USER" ? user.sessionId ?? undefined : undefined,
     });
 
     // Atualiza cookies

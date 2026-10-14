@@ -8,6 +8,7 @@ function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = searchParams.get("next") ?? "/estudo";
+  const motivo = searchParams.get("motivo");
 
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
@@ -64,6 +65,18 @@ function LoginForm() {
         {/* Card */}
         <div className="glass p-8">
           <h2 className="text-xl font-medium text-[#292827] mb-6">Entrar na conta</h2>
+
+          {motivo === "outro-dispositivo" && (
+            <div className="mb-5 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              Sua conta foi acessada em outro dispositivo, por isso esta sessão foi encerrada.
+              Cada conta é de uso pessoal — não compartilhe seu usuário e senha.
+            </div>
+          )}
+          {motivo === "sessao" && (
+            <div className="mb-5 rounded-lg border border-[#e3e3e2] bg-white/70 px-4 py-3 text-sm text-[#666666]">
+              Sua sessão expirou. Entre novamente para continuar.
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
