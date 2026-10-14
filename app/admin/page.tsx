@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getAllMateriasData } from "@/lib/getMateriaData";
+import { getResumoMaterias } from "@/lib/getMateriaData";
 import CardsPresenca from "@/components/admin/CardsPresenca";
 
 export const dynamic = "force-dynamic";
@@ -30,14 +30,14 @@ async function contagensAdmin(): Promise<{ cadastrados: number; pendentes: numbe
 export default async function AdminPage() {
   const [dbOk, materias, { cadastrados, pendentes }] = await Promise.all([
     checkDb(),
-    getAllMateriasData(),
+    getResumoMaterias(),
     contagensAdmin(),
   ]);
 
-  const totalBlocos     = materias.reduce((a, m) => a + m.blocos.length, 0);
-  const totalTopicos    = materias.reduce((a, m) => a + m.blocos.reduce((b, bl) => b + bl.topicos.length, 0), 0);
-  const totalQuizzes    = materias.reduce((a, m) => a + m.blocos.reduce((b, bl) => b + bl.topicos.reduce((c, t) => c + t.quizzes.length, 0), 0), 0);
-  const totalFlashcards = materias.reduce((a, m) => a + m.blocos.reduce((b, bl) => b + bl.topicos.reduce((c, t) => c + t.flashcards.length, 0), 0), 0);
+  const totalBlocos     = materias.reduce((a, m) => a + m.blocos, 0);
+  const totalTopicos    = materias.reduce((a, m) => a + m.topicos, 0);
+  const totalQuizzes    = materias.reduce((a, m) => a + m.quizzes, 0);
+  const totalFlashcards = materias.reduce((a, m) => a + m.flashcards, 0);
 
   return (
     <div className="p-8 text-white">
@@ -151,9 +151,9 @@ export default async function AdminPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {materias.map((m) => {
-            const totalTop  = m.blocos.reduce((a, b) => a + b.topicos.length, 0);
-            const totalQ    = m.blocos.reduce((a, b) => a + b.topicos.reduce((c, t) => c + t.quizzes.length, 0), 0);
-            const totalFc   = m.blocos.reduce((a, b) => a + b.topicos.reduce((c, t) => c + t.flashcards.length, 0), 0);
+            const totalTop  = m.topicos;
+            const totalQ    = m.quizzes;
+            const totalFc   = m.flashcards;
 
             return (
               <div
@@ -178,7 +178,7 @@ export default async function AdminPage() {
                 {/* Mini stats */}
                 <div className="grid grid-cols-4 divide-x divide-gray-800 border-t border-gray-800">
                   {[
-                    { n: m.blocos.length, l: "blocos" },
+                    { n: m.blocos, l: "blocos" },
                     { n: totalTop,        l: "tópicos" },
                     { n: totalQ,          l: "questões" },
                     { n: totalFc,         l: "cards" },

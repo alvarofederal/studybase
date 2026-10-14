@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
-import { getAllMateriasData } from "@/lib/getMateriaData";
+import { getResumoMaterias } from "@/lib/getMateriaData";
 import { verifyAccessToken } from "@/lib/auth/jwt";
 import LandingUserButtons from "@/components/LandingUserButtons";
 import LandingGuestButtons from "@/components/LandingGuestButtons";
@@ -8,15 +8,10 @@ import LandingGuestButtons from "@/components/LandingGuestButtons";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const todas = await getAllMateriasData();
+  const todas = await getResumoMaterias();
 
   // Só aparecem matérias com conteúdo completo: tópicos, questões e flashcards
-  const materias = todas.filter((m) => {
-    const topicos = m.blocos.reduce((a, b) => a + b.topicos.length, 0);
-    const quizzes = m.blocos.reduce((a, b) => a + b.topicos.reduce((c, t) => c + t.quizzes.length, 0), 0);
-    const cards   = m.blocos.reduce((a, b) => a + b.topicos.reduce((c, t) => c + t.flashcards.length, 0), 0);
-    return topicos > 0 && quizzes > 0 && cards > 0;
-  });
+  const materias = todas.filter((m) => m.topicos > 0 && m.quizzes > 0 && m.flashcards > 0);
 
   // Verificar sessão para botões contextuais na navbar
   let sessao: { sub: string; role: string } | null = null;
@@ -30,10 +25,10 @@ export default async function Home() {
     sessao = null;
   }
 
-  const totalBlocos     = materias.reduce((a, m) => a + m.blocos.length, 0);
-  const totalTopicos    = materias.reduce((a, m) => a + m.blocos.reduce((b, bl) => b + bl.topicos.length, 0), 0);
-  const totalQuizzes    = materias.reduce((a, m) => a + m.blocos.reduce((b, bl) => b + bl.topicos.reduce((c, t) => c + t.quizzes.length, 0), 0), 0);
-  const totalFlashcards = materias.reduce((a, m) => a + m.blocos.reduce((b, bl) => b + bl.topicos.reduce((c, t) => c + t.flashcards.length, 0), 0), 0);
+  const totalBlocos     = materias.reduce((a, m) => a + m.blocos, 0);
+  const totalTopicos    = materias.reduce((a, m) => a + m.topicos, 0);
+  const totalQuizzes    = materias.reduce((a, m) => a + m.quizzes, 0);
+  const totalFlashcards = materias.reduce((a, m) => a + m.flashcards, 0);
 
   return (
     <div className="sh-landing min-h-screen overflow-x-hidden">
@@ -202,9 +197,9 @@ export default async function Home() {
           ) : (
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 xl:grid-cols-3">
               {materias.map((m) => {
-                const totalTop = m.blocos.reduce((a, b) => a + b.topicos.length, 0);
-                const totalQ   = m.blocos.reduce((a, b) => a + b.topicos.reduce((c, t) => c + t.quizzes.length, 0), 0);
-                const totalFc  = m.blocos.reduce((a, b) => a + b.topicos.reduce((c, t) => c + t.flashcards.length, 0), 0);
+                const totalTop = m.topicos;
+                const totalQ   = m.quizzes;
+                const totalFc  = m.flashcards;
 
                 return (
                   <Link
@@ -225,7 +220,7 @@ export default async function Home() {
                     </div>
                     <div className="mb-5 grid grid-cols-4 gap-2">
                       {[
-                        { n: m.blocos.length, l: "blocos" },
+                        { n: m.blocos, l: "blocos" },
                         { n: totalTop,        l: "tópicos" },
                         { n: totalQ,          l: "questões" },
                         { n: totalFc,         l: "cards" },

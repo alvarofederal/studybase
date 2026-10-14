@@ -32,7 +32,14 @@ export async function GET(req: NextRequest) {
     if (!user || !user.ativo) throw new Error("inactive");
 
     // Rotaciona tokens
-    await prisma.refreshToken.delete({ where: { tokenHash } });
+    // O token antigo continua válido por mais 60s (em vez de ser apagado na hora): quando duas
+    // requisições (prefetch, heartbeat, clique) renovam ao mesmo tempo com o mesmo cookie, a
+    // segunda não falha nem derruba a sessão.
+    await prisma.refreshToken.update({
+      where: { tokenHash },
+      data: { expiresAt: new Date(Math.min(stored.expiresAt.getTime(), Date.now() + 60_000)) },
+    });
+    await prisma.refreshToken.deleteMany({ where: { userId: user.id, expiresAt: { lt: new Date() } } });
     const newRefreshRaw = await signRefreshToken(user.id);
     const newHash = hashToken(newRefreshRaw);
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);

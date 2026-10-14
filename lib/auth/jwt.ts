@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { SignJWT, jwtVerify } from "jose";
 
 import { getAccessSecret, getRefreshSecret } from "./secrets";
@@ -22,8 +23,11 @@ export async function signAccessToken(payload: JWTPayload): Promise<string> {
 
 // Refresh token — 7 dias
 export async function signRefreshToken(userId: string): Promise<string> {
+  // jti único: sem ele, dois tokens emitidos no mesmo segundo ficam idênticos (mesmo hash)
+  // e violam a unicidade no banco quando renovações simultâneas acontecem.
   return new SignJWT({})
     .setProtectedHeader({ alg: "HS256" })
+    .setJti(randomUUID())
     .setSubject(userId)
     .setIssuedAt()
     .setExpirationTime("7d")
