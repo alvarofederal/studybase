@@ -7,7 +7,10 @@ import EstudoCliente from "./EstudoCliente";
 
 export const dynamic = "force-dynamic";
 
-type Props = { params: Promise<{ slug: string }> };
+type Props = {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ topico?: string }>;
+};
 
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
@@ -19,8 +22,9 @@ export async function generateMetadata({ params }: Props) {
   };
 }
 
-export default async function EstudoPage({ params }: Props) {
+export default async function EstudoPage({ params, searchParams }: Props) {
   const { slug } = await params;
+  const { topico: topicoInicialId } = await searchParams;
 
   // ── Autenticação ─────────────────────────────────────────────────────
   const cookieStore = await cookies();
@@ -90,6 +94,7 @@ export default async function EstudoPage({ params }: Props) {
       materia={materia}
       user={user}
       progressoInicial={progressoInicial}
+      topicoInicialId={topicoInicialId}
     />
   );
 }

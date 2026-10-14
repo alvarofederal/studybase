@@ -74,7 +74,7 @@ export default async function PerfilPage() {
   });
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white flex">
+    <div className="min-h-screen text-white flex">
 
       {/* ══ SIDEBAR (desktop) ══════════════════════════════════════════ */}
       <aside className="hidden lg:flex flex-col w-72 shrink-0 bg-gray-900/60 border-r border-gray-800/60 h-screen sticky top-0">
@@ -208,7 +208,7 @@ export default async function PerfilPage() {
                 </div>
 
                 {materiasAtivas.length === 0 ? (
-                  <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8 text-center">
+                  <div className="glass p-8 text-center">
                     <div className="text-4xl mb-3">📚</div>
                     <p className="text-gray-400 font-medium text-sm">Nenhuma matéria liberada</p>
                     <p className="text-gray-600 text-xs mt-1 mb-4">Solicite acesso na página principal</p>
@@ -226,7 +226,7 @@ export default async function PerfilPage() {
                       return (
                         <div
                           key={materia.id}
-                          className="flex flex-col p-4 bg-gray-900 border border-gray-800 rounded-xl transition-all hover:border-gray-700"
+                          className="flex flex-col p-4 glass transition-all hover:border-gray-700"
                         >
                           <Link
                             href={`/estudo/${materia.slug}`}
@@ -301,7 +301,7 @@ export default async function PerfilPage() {
                   Segurança
                 </h2>
               </div>
-              <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+              <div className="glass p-5">
                 <PerfilCliente email={user.email} />
               </div>
             </div>

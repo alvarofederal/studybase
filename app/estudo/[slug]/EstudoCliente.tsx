@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
@@ -160,10 +160,12 @@ export default function EstudoCliente({
   materia,
   user,
   progressoInicial,
+  topicoInicialId,
 }: {
   materia: Materia;
   user: UserInfo;
   progressoInicial: ProgressoInicial;
+  topicoInicialId?: string;
 }) {
   const router = useRouter();
 
@@ -264,6 +266,16 @@ export default function EstudoCliente({
     setBlocoTrancadoMsg(null);
   }
 
+  // Deep link vindo do mapa de estudo: /estudo/[slug]?topico=<id>
+  const deepLinkAplicado = useRef(false);
+  useEffect(() => {
+    if (deepLinkAplicado.current || !topicoInicialId) return;
+    deepLinkAplicado.current = true;
+    const alvo = materia.blocos.flatMap((b) => b.topicos).find((t) => t.id === topicoInicialId);
+    if (alvo) handleTopico(alvo);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function responder(quizId: string, opcaoId: string) {
     if (revelados.has(quizId)) return;
     setRespostas((r) => ({ ...r, [quizId]: opcaoId }));
@@ -353,10 +365,10 @@ export default function EstudoCliente({
 
   /* ─── Render ─────────────────────────────────────────────────────────── */
   return (
-    <div className="h-screen bg-gray-950 text-white flex flex-col overflow-hidden">
+    <div className="h-screen text-white flex flex-col overflow-hidden">
 
       {/* ══ NAVBAR ══════════════════════════════════════════════════════ */}
-      <header className="h-14 bg-gray-900 border-b border-gray-800 flex items-center px-3 gap-2 shrink-0 z-20">
+      <header className="h-14 glass !rounded-none !border-x-0 !border-t-0 flex items-center px-3 gap-2 shrink-0 z-20">
         <button
           onClick={() => setSidebarAberta(true)}
           className="md:hidden w-10 h-10 flex items-center justify-center rounded-xl hover:bg-gray-800 active:bg-gray-700 text-gray-400 shrink-0"
@@ -637,7 +649,7 @@ export default function EstudoCliente({
 
                         {/* ── Placar parcial ── */}
                         {!tudo && prog.quizRespondidas > 0 && (
-                          <div className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 flex flex-wrap items-center gap-3 text-sm">
+                          <div className="glass px-4 py-3 flex flex-wrap items-center gap-3 text-sm">
                             <span className="text-gray-400">{prog.quizRespondidas}/{prog.quizTotal} respondidas</span>
                             <span className="text-emerald-400 font-semibold">{prog.quizAcertos} corretas</span>
                             <span className="text-gray-500">{Math.round((prog.quizAcertos / prog.quizRespondidas) * 100)}%</span>
@@ -650,7 +662,7 @@ export default function EstudoCliente({
                           const isRevelado = revelados.has(quiz.id);
                           const acertou    = isRevelado && !!quiz.opcoes.find((o) => o.id === respostaId)?.correta;
                           return (
-                            <div key={quiz.id} className="bg-gray-900 border border-gray-800 rounded-2xl p-4 sm:p-6">
+                            <div key={quiz.id} className="glass p-4 sm:p-6">
                               {/* Pergunta */}
                               <p className="text-white font-semibold mb-4 leading-relaxed text-sm sm:text-base">
                                 <span className="text-emerald-400 text-sm mr-2 font-normal">Q{qi + 1}</span>
@@ -792,7 +804,7 @@ export default function EstudoCliente({
 
                         {/* ── Progresso parcial ── */}
                         {!tudo && prog.fcRevisadas > 0 && (
-                          <div className="bg-gray-900 border border-gray-800 rounded-xl px-4 py-3 flex items-center gap-3 text-sm mb-4">
+                          <div className="glass px-4 py-3 flex items-center gap-3 text-sm mb-4">
                             <span className="text-gray-400">{prog.fcRevisadas}/{prog.fcTotal} revisados</span>
                             <span className="text-emerald-400 font-semibold">{prog.fcAcertos} memorizados</span>
                           </div>

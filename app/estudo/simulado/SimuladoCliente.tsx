@@ -163,7 +163,7 @@ export default function SimuladoCliente({
   if (fase === "config") {
     const campo = "mt-1 w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white";
     return (
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 space-y-4">
+      <div className="glass p-5 space-y-4">
         <h2 className="font-bold">Monte seu simulado</h2>
         <label className="block text-xs text-gray-400">
           Matéria
@@ -251,7 +251,7 @@ export default function SimuladoCliente({
           ))}
         </div>
 
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5">
+        <div className="glass p-5">
           <p className="text-[11px] text-gray-500 mb-2">{q.materia} · {q.topico}</p>
           <p className="text-sm font-medium leading-relaxed">{q.pergunta}</p>
           {q.tipo === "CERTO_ERRADO" ? (
@@ -348,7 +348,7 @@ export default function SimuladoCliente({
   const r = resultado!;
   return (
     <div className="space-y-5">
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 text-center">
+      <div className="glass p-5 text-center">
         {r.cebraspe ? (
           <>
             <p className="text-[11px] uppercase tracking-wider text-gray-500 mb-1">Saldo CEBRASPE</p>

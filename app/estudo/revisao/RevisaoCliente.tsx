@@ -80,7 +80,7 @@ export default function RevisaoCliente({ fila, vencidos }: { fila: Card[]; venci
         <div className="h-full bg-emerald-500 transition-all" style={{ width: `${(i / fila.length) * 100}%` }} />
       </div>
 
-      <div className="bg-gray-900 border border-gray-800 rounded-2xl p-5 sm:p-6 min-h-[220px]">
+      <div className="glass p-5 sm:p-6 min-h-[220px]">
         <MarkdownRenderer content={card.frente} />
         {!virado && card.dica && <p className="text-xs text-amber-400/80 mt-4">💡 Dica: {card.dica}</p>}
         {virado && (

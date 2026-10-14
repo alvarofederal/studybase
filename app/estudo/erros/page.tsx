@@ -45,8 +45,8 @@ export default async function ErrosPage() {
   const fracos = [...porTopico.values()].sort((a, b) => b.n - a.n).slice(0, 5);
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
-      <header className="h-14 bg-gray-900 border-b border-gray-800 flex items-center px-4 gap-3">
+    <div className="min-h-screen text-white">
+      <header className="h-14 glass !rounded-none !border-x-0 !border-t-0 flex items-center px-4 gap-3">
         <Link href="/estudo" className="text-gray-400 hover:text-white text-sm">← Início</Link>
         <h1 className="font-bold text-sm flex-1">Caderno de erros</h1>
         {erros.length > 0 && (
@@ -68,7 +68,7 @@ export default async function ErrosPage() {
           </div>
         ) : (
           <>
-            <section className="bg-gray-900 border border-gray-800 rounded-2xl p-4">
+            <section className="glass p-4">
               <h2 className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider mb-3">
                 Onde reforçar
               </h2>
@@ -89,7 +89,7 @@ export default async function ErrosPage() {
               const certa = q.opcoes.find((o) => o.correta);
               const marcada = q.opcoes.find((o) => o.id === e.opcaoId);
               return (
-                <article key={q.id} className="bg-gray-900 border border-gray-800 rounded-2xl p-4 sm:p-5">
+                <article key={q.id} className="glass p-4 sm:p-5">
                   <p className="text-[11px] text-gray-500 mb-2">
                     {q.topico.bloco.materia.nome} · {q.topico.titulo}
                   </p>

@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  weight: "variable",
 });
 
 const geistMono = Geist_Mono({
@@ -26,14 +27,14 @@ export default function RootLayout({
   return (
     <html
       lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${geistMono.variable} h-full antialiased`}
       suppressHydrationWarning
     >
       <head>
-        {/* Anti-flash: lê localStorage antes da hidratação React para evitar piscar dark→light */}
+        {/* Anti-flash: lê localStorage antes da hidratação React para evitar piscar claro/escuro */}
         <script
           dangerouslySetInnerHTML={{
-            __html: `(function(){try{var t=localStorage.getItem('sb-theme');if(t==='light')document.documentElement.classList.add('light');}catch(e){}})()`,
+            __html: `(function(){try{var t=localStorage.getItem('sb-theme');if(t!=='dark')document.documentElement.classList.add('light');}catch(e){}})()`,
           }}
         />
       </head>
