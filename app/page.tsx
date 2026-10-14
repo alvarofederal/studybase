@@ -8,7 +8,15 @@ import LandingGuestButtons from "@/components/LandingGuestButtons";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const materias = await getAllMateriasData();
+  const todas = await getAllMateriasData();
+
+  // Só aparecem matérias com conteúdo completo: tópicos, questões e flashcards
+  const materias = todas.filter((m) => {
+    const topicos = m.blocos.reduce((a, b) => a + b.topicos.length, 0);
+    const quizzes = m.blocos.reduce((a, b) => a + b.topicos.reduce((c, t) => c + t.quizzes.length, 0), 0);
+    const cards   = m.blocos.reduce((a, b) => a + b.topicos.reduce((c, t) => c + t.flashcards.length, 0), 0);
+    return topicos > 0 && quizzes > 0 && cards > 0;
+  });
 
   // Verificar sessão para botões contextuais na navbar
   let sessao: { sub: string; role: string } | null = null;
