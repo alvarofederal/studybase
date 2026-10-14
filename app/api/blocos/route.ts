@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+import { guardaAdmin } from "@/lib/auth/session";
 import prisma from "@/lib/prisma";
 
 // POST /api/blocos — cria um novo bloco
 export async function POST(request: Request) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const body = await request.json();
     const { nome, slug, descricao, ordem, materiaId } = body;
@@ -47,6 +50,8 @@ export async function POST(request: Request) {
 
 // GET /api/blocos?materiaId=xxx
 export async function GET(request: Request) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const { searchParams } = new URL(request.url);
     const materiaId = searchParams.get("materiaId");

@@ -1,9 +1,12 @@
 import { NextResponse } from "next/server";
+import { guardaAdmin } from "@/lib/auth/session";
 import prisma from "@/lib/prisma";
 
 // GET /api/materias — lista todas as matérias
 // ?tree=true  →  inclui blocos → topicos (para selects em cascata no admin)
 export async function GET(request: Request) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   const { searchParams } = new URL(request.url);
   const tree = searchParams.get("tree") === "true";
 
@@ -37,6 +40,8 @@ export async function GET(request: Request) {
 
 // POST /api/materias — cria uma nova matéria
 export async function POST(request: Request) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const body = await request.json();
     const { nome, slug, descricao, icone, cor, ordem } = body;

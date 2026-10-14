@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { guardaAdmin } from "@/lib/auth/session";
 import prisma from "@/lib/prisma";
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
@@ -30,6 +31,8 @@ function normalizeDificuldade(raw: unknown): Dificuldade {
 // Se substituir=true: apaga TODAS as questões do tópico antes de inserir.
 // Cria todos os quizzes e opções em paralelo. Retorna { criadas, erros, apagadas }.
 export async function POST(request: Request) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const body = await request.json();
     const { topicoId, questoes, substituir } = body as {

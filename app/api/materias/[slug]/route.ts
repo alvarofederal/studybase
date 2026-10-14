@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
+import { guardaAdmin } from "@/lib/auth/session";
 import prisma from "@/lib/prisma";
 
 type Params = { params: Promise<{ slug: string }> };
 
 // GET /api/materias/[slug] — retorna matéria com blocos e tópicos
 export async function GET(_req: Request, { params }: Params) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const { slug } = await params;
 
@@ -46,6 +49,8 @@ export async function GET(_req: Request, { params }: Params) {
 
 // PATCH /api/materias/[slug] — atualiza matéria
 export async function PATCH(request: Request, { params }: Params) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const { slug } = await params;
     const body = await request.json();
@@ -67,6 +72,8 @@ export async function PATCH(request: Request, { params }: Params) {
 
 // DELETE /api/materias/[slug] — remove matéria (cascade)
 export async function DELETE(_req: Request, { params }: Params) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const { slug } = await params;
 

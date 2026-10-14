@@ -37,3 +37,14 @@ export async function requireAdmin(): Promise<JWTPayload> {
   }
   return session;
 }
+
+/**
+ * Guarda para route handlers: devolve a resposta 401/403 a ser retornada,
+ * ou null se o chamador é ADMIN. Uso: `const negado = await guardaAdmin(); if (negado) return negado;`
+ */
+export async function guardaAdmin(): Promise<Response | null> {
+  const session = await getSession();
+  if (!session) return Response.json({ error: "Não autenticado." }, { status: 401 });
+  if (session.role !== "ADMIN") return Response.json({ error: "Acesso negado." }, { status: 403 });
+  return null;
+}

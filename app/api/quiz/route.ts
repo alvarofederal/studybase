@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+import { guardaAdmin } from "@/lib/auth/session";
 import prisma from "@/lib/prisma";
 
 // POST /api/quiz — cria uma nova questão com opções
 export async function POST(request: Request) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const body = await request.json();
     const { pergunta, explicacao, ordem, topicoId, opcoes, dificuldade, tags } = body;
@@ -58,6 +61,8 @@ export async function POST(request: Request) {
 
 // GET /api/quiz?topicoId=xxx&dificuldade=FACIL&tag=SFN
 export async function GET(request: Request) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const { searchParams } = new URL(request.url);
     const topicoId    = searchParams.get("topicoId");

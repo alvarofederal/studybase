@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+import { guardaAdmin } from "@/lib/auth/session";
 import prisma from "@/lib/prisma";
 
 // POST /api/flashcards — cria um flashcard
 export async function POST(request: Request) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const body = await request.json();
     const { frente, verso, dica, ordem, topicoId } = body;
@@ -36,6 +39,8 @@ export async function POST(request: Request) {
 
 // GET /api/flashcards?topicoId=xxx
 export async function GET(request: Request) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const { searchParams } = new URL(request.url);
     const topicoId = searchParams.get("topicoId");

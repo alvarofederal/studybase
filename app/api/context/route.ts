@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { guardaAdmin } from "@/lib/auth/session";
 import { getAllMateriasData } from "@/lib/getMateriaData";
 
 /**
@@ -8,6 +9,8 @@ import { getAllMateriasData } from "@/lib/getMateriaData";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   const materias = await getAllMateriasData();
 
   const lines: string[] = [];

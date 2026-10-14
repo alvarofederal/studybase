@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
+import { guardaAdmin } from "@/lib/auth/session";
 import prisma from "@/lib/prisma";
 
 // POST /api/topicos — cria um novo tópico
 export async function POST(request: Request) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const body = await request.json();
     const { titulo, slug, conteudo, resumo, ordem, blocoId } = body;
@@ -48,6 +51,8 @@ export async function POST(request: Request) {
 
 // GET /api/topicos?blocoId=xxx
 export async function GET(request: Request) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const { searchParams } = new URL(request.url);
     const blocoId = searchParams.get("blocoId");

@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
+import { guardaAdmin } from "@/lib/auth/session";
 import prisma from "@/lib/prisma";
 
 type Params = { params: Promise<{ id: string }> };
 
 // GET /api/blocos/[id]
 export async function GET(_req: Request, { params }: Params) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const { id } = await params;
     const bloco = await prisma.bloco.findUnique({
@@ -21,6 +24,8 @@ export async function GET(_req: Request, { params }: Params) {
 
 // PATCH /api/blocos/[id] — atualiza nome, slug, descricao
 export async function PATCH(request: Request, { params }: Params) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const { id } = await params;
     const { nome, slug, descricao } = await request.json();
@@ -41,6 +46,8 @@ export async function PATCH(request: Request, { params }: Params) {
 
 // DELETE /api/blocos/[id] — remove bloco e tudo em cascata
 export async function DELETE(_req: Request, { params }: Params) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const { id } = await params;
     await prisma.bloco.delete({ where: { id } });

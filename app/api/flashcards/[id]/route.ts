@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
+import { guardaAdmin } from "@/lib/auth/session";
 import prisma from "@/lib/prisma";
 
 type Params = { params: Promise<{ id: string }> };
 
 // GET /api/flashcards/[id]
 export async function GET(_req: Request, { params }: Params) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const { id } = await params;
     const fc = await prisma.flashcard.findUnique({ where: { id } });
@@ -18,6 +21,8 @@ export async function GET(_req: Request, { params }: Params) {
 
 // PATCH /api/flashcards/[id] — atualiza frente, verso, dica
 export async function PATCH(request: Request, { params }: Params) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const { id } = await params;
     const { frente, verso, dica } = await request.json();
@@ -38,6 +43,8 @@ export async function PATCH(request: Request, { params }: Params) {
 
 // DELETE /api/flashcards/[id]
 export async function DELETE(_req: Request, { params }: Params) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const { id } = await params;
     await prisma.flashcard.delete({ where: { id } });

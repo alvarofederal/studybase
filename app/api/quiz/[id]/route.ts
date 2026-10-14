@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
+import { guardaAdmin } from "@/lib/auth/session";
 import prisma from "@/lib/prisma";
 
 type Params = { params: Promise<{ id: string }> };
 
 // GET /api/quiz/[id]
 export async function GET(_req: Request, { params }: Params) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const { id } = await params;
     const quiz = await prisma.quiz.findUnique({
@@ -21,6 +24,8 @@ export async function GET(_req: Request, { params }: Params) {
 
 // PATCH /api/quiz/[id] — atualiza pergunta, explicacao, dificuldade, tags e opções
 export async function PATCH(request: Request, { params }: Params) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const { id } = await params;
     const { pergunta, explicacao, dificuldade, tags, opcoes } = await request.json();
@@ -65,6 +70,8 @@ export async function PATCH(request: Request, { params }: Params) {
 
 // DELETE /api/quiz/[id]
 export async function DELETE(_req: Request, { params }: Params) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const { id } = await params;
     await prisma.quiz.delete({ where: { id } });

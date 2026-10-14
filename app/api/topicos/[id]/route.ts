@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
+import { guardaAdmin } from "@/lib/auth/session";
 import prisma from "@/lib/prisma";
 
 type Params = { params: Promise<{ id: string }> };
 
 // GET /api/topicos/[id]
 export async function GET(_req: Request, { params }: Params) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const { id } = await params;
     const topico = await prisma.topico.findUnique({ where: { id } });
@@ -18,6 +21,8 @@ export async function GET(_req: Request, { params }: Params) {
 
 // DELETE /api/topicos/[id]
 export async function DELETE(_req: Request, { params }: Params) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const { id } = await params;
     await prisma.topico.delete({ where: { id } });
@@ -30,6 +35,8 @@ export async function DELETE(_req: Request, { params }: Params) {
 
 // PATCH /api/topicos/[id] — atualiza título, slug, resumo, conteudo e/ou publicado
 export async function PATCH(request: Request, { params }: Params) {
+  const negado = await guardaAdmin();
+  if (negado) return negado;
   try {
     const { id } = await params;
     const body = await request.json();
