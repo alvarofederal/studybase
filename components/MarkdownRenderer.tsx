@@ -19,38 +19,77 @@ type Block =
   | { type: "p"; text: string }
   | { type: "ul"; items: string[] }
   | { type: "ol"; items: string[] }
-  | { type: "blockquote"; text: string }
+  | { type: "blockquote"; lines: string[] }
   | { type: "table"; headers: string[]; rows: string[][] }
   | { type: "hr" };
 
 function parseInline(text: string): React.ReactNode {
-  // Divide por padrões inline: **bold**, *italic*, `code`
+  // Marcadores alternáveis: **negrito**, *itálico*, ~~tachado~~, `código` — aceitam aninhamento
+  // (ex.: *Não **se** esqueça.*). Um marcador sem par vira texto normal ao fim.
   const parts: React.ReactNode[] = [];
-  const regex = /(\*\*(.+?)\*\*|\*(.+?)\*|`(.+?)`)/g;
-  let last = 0;
-  let match;
+  let bold = false;
+  let italic = false;
+  let strike = false;
+  let buf = "";
   let key = 0;
 
-  while ((match = regex.exec(text)) !== null) {
-    if (match.index > last) {
-      parts.push(text.slice(last, match.index));
+  const flush = () => {
+    if (!buf) return;
+    if (!bold && !italic && !strike) {
+      parts.push(buf);
+    } else {
+      const cls = [
+        bold ? "font-semibold text-white" : "",
+        italic ? "italic text-gray-200" : "",
+        strike ? "line-through decoration-red-400/70 text-red-300/80" : "",
+      ]
+        .filter(Boolean)
+        .join(" ");
+      parts.push(<span key={key++} className={cls}>{buf}</span>);
     }
-    if (match[2]) {
-      parts.push(<strong key={key++} className="font-semibold text-white">{match[2]}</strong>);
-    } else if (match[3]) {
-      parts.push(<em key={key++} className="italic text-gray-200">{match[3]}</em>);
-    } else if (match[4]) {
-      parts.push(
-        <code key={key++} className="bg-gray-800 text-emerald-300 px-1.5 py-0.5 rounded text-sm font-mono">
-          {match[4]}
-        </code>
-      );
-    }
-    last = match.index + match[0].length;
-  }
+    buf = "";
+  };
 
-  if (last < text.length) parts.push(text.slice(last));
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (c === "*" && text[i + 1] === "*") {
+      flush();
+      bold = !bold;
+      i++;
+    } else if (c === "*") {
+      flush();
+      italic = !italic;
+    } else if (c === "~" && text[i + 1] === "~") {
+      flush();
+      strike = !strike;
+      i++;
+    } else if (c === "`") {
+      const end = text.indexOf("`", i + 1);
+      if (end > i) {
+        flush();
+        parts.push(
+          <code key={key++} className="bg-gray-800 text-emerald-300 px-1.5 py-0.5 rounded text-sm font-mono">
+            {text.slice(i + 1, end)}
+          </code>
+        );
+        i = end;
+      } else {
+        buf += c;
+      }
+    } else {
+      buf += c;
+    }
+  }
+  flush();
   return parts.length === 1 ? parts[0] : parts;
+}
+
+/** Divide uma linha de tabela preservando células vazias (só remove as barras das pontas). */
+function splitRow(line: string): string[] {
+  let t = line.trim();
+  if (t.startsWith("|")) t = t.slice(1);
+  if (t.endsWith("|")) t = t.slice(0, -1);
+  return t.split("|").map((c) => c.trim());
 }
 
 function parseBlocks(md: string): Block[] {
@@ -86,28 +125,23 @@ function parseBlocks(md: string): Block[] {
     }
 
     // Blockquote
-    if (line.startsWith("> ")) {
-      const text = line.slice(2);
-      blocks.push({ type: "blockquote", text });
-      i++;
+    if (line.startsWith("> ") || line === ">") {
+      const quoted: string[] = [];
+      while (i < lines.length && (lines[i].startsWith("> ") || lines[i] === ">")) {
+        quoted.push(lines[i].slice(2));
+        i++;
+      }
+      blocks.push({ type: "blockquote", lines: quoted });
       continue;
     }
 
     // Table
     if (line.includes("|") && i + 1 < lines.length && lines[i + 1].includes("--")) {
-      const headers = line
-        .split("|")
-        .map((s) => s.trim())
-        .filter(Boolean);
+      const headers = splitRow(line);
       i += 2; // skip separator line
       const rows: string[][] = [];
       while (i < lines.length && lines[i].includes("|")) {
-        rows.push(
-          lines[i]
-            .split("|")
-            .map((s) => s.trim())
-            .filter(Boolean)
-        );
+        rows.push(splitRow(lines[i]));
         i++;
       }
       blocks.push({ type: "table", headers, rows });
@@ -171,19 +205,19 @@ export default function MarkdownRenderer({ content, className = "" }: Props) {
           case "h1":
             return (
               <h1 key={idx} className="text-2xl font-black text-white mt-6 mb-2 first:mt-0">
-                {block.text}
+                {parseInline(block.text)}
               </h1>
             );
           case "h2":
             return (
               <h2 key={idx} className="text-lg font-bold text-white mt-5 mb-1.5 border-b border-gray-800 pb-1.5">
-                {block.text}
+                {parseInline(block.text)}
               </h2>
             );
           case "h3":
             return (
               <h3 key={idx} className="text-base font-semibold text-emerald-400 mt-4 mb-1">
-                {block.text}
+                {parseInline(block.text)}
               </h3>
             );
           case "p":
@@ -217,9 +251,20 @@ export default function MarkdownRenderer({ content, className = "" }: Props) {
           case "blockquote":
             return (
               <div key={idx} className="bg-gradient-to-r from-emerald-500/10 to-teal-500/5 border border-emerald-500/20 rounded-xl px-4 py-3 my-2">
-                <p className="text-sm text-emerald-200 leading-relaxed">
-                  {parseInline(block.text)}
-                </p>
+                <div className="space-y-1">
+                  {block.lines.map((ln, j) =>
+                    /^[-*] /.test(ln) ? (
+                      <p key={j} className="text-sm text-emerald-200 leading-relaxed flex gap-2">
+                        <span className="text-emerald-500 shrink-0">→</span>
+                        <span>{parseInline(ln.slice(2))}</span>
+                      </p>
+                    ) : ln.trim() === "" ? null : (
+                      <p key={j} className="text-sm text-emerald-200 leading-relaxed">
+                        {parseInline(ln)}
+                      </p>
+                    ),
+                  )}
+                </div>
               </div>
             );
           case "table":
@@ -230,7 +275,7 @@ export default function MarkdownRenderer({ content, className = "" }: Props) {
                     <tr className="bg-gray-800">
                       {block.headers.map((h, j) => (
                         <th key={j} className="px-4 py-2.5 text-left text-xs font-semibold text-gray-400 uppercase tracking-wider">
-                          {h}
+                          {parseInline(h)}
                         </th>
                       ))}
                     </tr>
