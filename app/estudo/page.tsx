@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifyAccessToken } from "@/lib/auth/jwt";
 import prisma from "@/lib/prisma";
+import { carregarPainel } from "@/lib/study/painel";
 import EstudoDashboard from "./EstudoDashboard";
 
 export const dynamic = "force-dynamic";
@@ -80,13 +81,15 @@ async function getDados() {
     }
   }
 
-  return { user, todasMaterias, idsAtivos, statusSolicitacao, expiresAtMap };
+  const painel = await carregarPainel(user.id);
+
+  return { user, todasMaterias, idsAtivos, statusSolicitacao, expiresAtMap, painel };
 }
 
 type PageProps = { searchParams: Promise<{ acesso?: string }> };
 
 export default async function EstudoIndexPage({ searchParams }: PageProps) {
-  const { user, todasMaterias, idsAtivos, statusSolicitacao, expiresAtMap } = await getDados();
+  const { user, todasMaterias, idsAtivos, statusSolicitacao, expiresAtMap, painel } = await getDados();
   const sp = await searchParams;
 
   const materiasComAcesso     = todasMaterias.filter((m) => idsAtivos.has(m.id));
@@ -100,6 +103,7 @@ export default async function EstudoIndexPage({ searchParams }: PageProps) {
       statusSolicitacao={statusSolicitacao}
       expiresAtMap={expiresAtMap}
       acessoNegado={sp.acesso === "negado"}
+      painel={painel}
     />
   );
 }

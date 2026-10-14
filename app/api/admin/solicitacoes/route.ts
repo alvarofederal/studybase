@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   });
 
   // Para aprovadas, enriquecer com a data de validade do UserMateria
-  let expiresAtMap: Record<string, Date | null> = {};
+  const expiresAtMap: Record<string, Date | null> = {};
   if (status === "APROVADA" && solicitacoes.length > 0) {
     const pares = solicitacoes.map((s) => ({
       userId: s.userId,

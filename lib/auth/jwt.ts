@@ -1,11 +1,6 @@
 import { SignJWT, jwtVerify } from "jose";
 
-const ACCESS_SECRET = new TextEncoder().encode(
-  process.env.JWT_ACCESS_SECRET ?? "change-me-access-secret"
-);
-const REFRESH_SECRET = new TextEncoder().encode(
-  process.env.JWT_REFRESH_SECRET ?? "change-me-refresh-secret"
-);
+import { getAccessSecret, getRefreshSecret } from "./secrets";
 
 export interface JWTPayload {
   sub: string; // userId
@@ -20,7 +15,7 @@ export async function signAccessToken(payload: JWTPayload): Promise<string> {
     .setSubject(payload.sub)
     .setIssuedAt()
     .setExpirationTime("5m")
-    .sign(ACCESS_SECRET);
+    .sign(getAccessSecret());
 }
 
 // Refresh token — 7 dias
@@ -30,11 +25,11 @@ export async function signRefreshToken(userId: string): Promise<string> {
     .setSubject(userId)
     .setIssuedAt()
     .setExpirationTime("7d")
-    .sign(REFRESH_SECRET);
+    .sign(getRefreshSecret());
 }
 
 export async function verifyAccessToken(token: string): Promise<JWTPayload> {
-  const { payload } = await jwtVerify(token, ACCESS_SECRET);
+  const { payload } = await jwtVerify(token, getAccessSecret());
   return {
     sub: payload.sub as string,
     email: payload.email as string,
@@ -43,7 +38,7 @@ export async function verifyAccessToken(token: string): Promise<JWTPayload> {
 }
 
 export async function verifyRefreshToken(token: string): Promise<string> {
-  const { payload } = await jwtVerify(token, REFRESH_SECRET);
+  const { payload } = await jwtVerify(token, getRefreshSecret());
   return payload.sub as string;
 }
 

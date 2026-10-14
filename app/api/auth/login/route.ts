@@ -5,6 +5,8 @@ import { comparePassword } from "@/lib/auth/hash";
 import { signAccessToken, signRefreshToken } from "@/lib/auth/jwt";
 import { hashToken } from "@/lib/auth/hash";
 
+import { limitar, ipDe, respostaLimitada } from "@/lib/security/rate-limit";
+
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
@@ -18,6 +20,9 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
+    const rl = limitar(`login:${ipDe(req)}:${String(email).toLowerCase()}`, 8, 15 * 60_000);
+    if (!rl.ok) return respostaLimitada(rl.retryAfter);
 
     const user = await prisma.user.findUnique({ where: { email } });
 

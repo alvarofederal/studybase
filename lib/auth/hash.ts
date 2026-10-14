@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { createHash } from "crypto";
+import { createHash, randomBytes } from "crypto";
 
 const SALT_ROUNDS = 12;
 
@@ -21,6 +21,5 @@ export function hashToken(token: string): string {
 
 // Gera token URL-safe de N bytes (hex)
 export function generateToken(bytes = 32): string {
-  const { randomBytes } = require("crypto");
   return randomBytes(bytes).toString("hex");
 }

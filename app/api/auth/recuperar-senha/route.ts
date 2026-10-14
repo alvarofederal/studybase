@@ -3,6 +3,8 @@ import prisma from "@/lib/prisma";
 import { hashToken, generateToken } from "@/lib/auth/hash";
 import { sendPasswordRecoveryEmail } from "@/lib/auth/email";
 
+import { limitar, ipDe, respostaLimitada } from "@/lib/security/rate-limit";
+
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
@@ -12,6 +14,9 @@ export async function POST(req: NextRequest) {
     if (!email) {
       return NextResponse.json({ error: "E-mail obrigatório." }, { status: 400 });
     }
+
+    const rl = limitar(`recuperar:${ipDe(req)}`, 5, 15 * 60_000);
+    if (!rl.ok) return respostaLimitada(rl.retryAfter);
 
     const user = await prisma.user.findUnique({ where: { email } });
 

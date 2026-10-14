@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth/session";
+import { temAcessoMateria } from "@/lib/study/acesso";
 
 export const dynamic = "force-dynamic";
 
 /**
  * POST /api/estudo/responder-quiz
- * Grava (ou atualiza) a última resposta e registra no histórico de tentativas.
+ * Body: { quizId, opcaoId }
+ * O servidor decide se está correta e de qual tópico é a questão —
+ * nunca confia em `correta`/`topicoId` vindos do navegador.
  */
 export async function POST(req: NextRequest) {
   const session = await getSession();
@@ -14,40 +17,59 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
   }
 
-  const { quizId, opcaoId, correta, topicoId } =
-    await req.json() as {
-      quizId: string;
-      opcaoId: string;
-      correta: boolean;
-      topicoId: string;
-    };
-
-  if (!quizId || !opcaoId || !topicoId) {
+  const { quizId, opcaoId } = (await req.json().catch(() => ({}))) as {
+    quizId?: string;
+    opcaoId?: string;
+  };
+  if (!quizId || !opcaoId) {
     return NextResponse.json({ error: "Campos obrigatórios ausentes." }, { status: 400 });
   }
 
-  const userId = session.sub;
-
-  // Conta quantas tentativas já existem para determinar o número da próxima
-  const totalTentativas = await prisma.historicoRespostaQuiz.count({
-    where: { userId, quizId },
+  const quiz = await prisma.quiz.findUnique({
+    where: { id: quizId },
+    select: {
+      topicoId: true,
+      opcoes: { select: { id: true, correta: true } },
+      topico: { select: { bloco: { select: { materiaId: true } } } },
+    },
   });
+  const opcao = quiz?.opcoes.find((o) => o.id === opcaoId);
+  if (!quiz || !opcao) {
+    return NextResponse.json({ error: "Questão ou alternativa inválida." }, { status: 400 });
+  }
 
-  // Executa os dois writes em paralelo
-  await Promise.all([
-    // 1) Upsert da última resposta (usado para cálculo de progresso)
-    prisma.respostaQuiz.upsert({
-      where: { userId_quizId: { userId, quizId } },
-      update: { opcaoId, correta, topicoId, updatedAt: new Date() },
-      create: { userId, quizId, opcaoId, correta, topicoId },
-    }),
-    // 2) Registro permanente no histórico de tentativas
-    prisma.historicoRespostaQuiz.create({
-      data: { userId, quizId, opcaoId, correta, topicoId, tentativa: totalTentativas + 1 },
-    }),
-  ]);
+  const userId = session.sub;
+  if (!(await temAcessoMateria(userId, quiz.topico.bloco.materiaId))) {
+    return NextResponse.json({ error: "Sem acesso a esta matéria." }, { status: 403 });
+  }
 
-  return NextResponse.json({ ok: true, tentativa: totalTentativas + 1 });
+  const correta = opcao.correta;
+  const topicoId = quiz.topicoId;
+
+  // Transação + retry: a unique (userId, quizId, tentativa) impede números duplicados
+  // quando duas respostas chegam ao mesmo tempo.
+  for (let i = 0; i < 3; i++) {
+    try {
+      const tentativa = await prisma.$transaction(async (tx) => {
+        const n = (await tx.historicoRespostaQuiz.count({ where: { userId, quizId } })) + 1;
+        await tx.historicoRespostaQuiz.create({
+          data: { userId, quizId, opcaoId, correta, topicoId, tentativa: n },
+        });
+        await tx.respostaQuiz.upsert({
+          where: { userId_quizId: { userId, quizId } },
+          update: { opcaoId, correta, topicoId },
+          create: { userId, quizId, opcaoId, correta, topicoId },
+        });
+        return n;
+      });
+      return NextResponse.json({ ok: true, correta, tentativa });
+    } catch (err) {
+      if (i === 2) {
+        console.error("[RESPONDER-QUIZ]", err);
+        return NextResponse.json({ error: "Erro ao gravar resposta." }, { status: 500 });
+      }
+    }
+  }
 }
 
 /**
@@ -62,7 +84,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
   }
 
-  const { quizId } = await req.json() as { quizId: string };
+  const { quizId } = (await req.json().catch(() => ({}))) as { quizId?: string };
   if (!quizId) {
     return NextResponse.json({ error: "quizId obrigatório." }, { status: 400 });
   }

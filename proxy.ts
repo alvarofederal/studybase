@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
-
-const ACCESS_SECRET = new TextEncoder().encode(
-  process.env.JWT_ACCESS_SECRET ?? "change-me-access-secret"
-);
+import { getAccessSecret } from "@/lib/auth/secrets";
 
 // Rotas que precisam de autenticação
 const PROTECTED_PREFIXES = ["/estudo", "/admin"];
@@ -34,7 +31,7 @@ export async function proxy(request: NextRequest) {
 
   if (accessToken) {
     try {
-      const { payload: p } = await jwtVerify(accessToken, ACCESS_SECRET);
+      const { payload: p } = await jwtVerify(accessToken, getAccessSecret());
       payload = p as { sub?: string; role?: string };
     } catch {
       // Token expirado ou inválido

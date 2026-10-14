@@ -146,6 +146,8 @@ model User {
   senha     String   // bcrypt hash
   role      Role     @default(USER)
   ativo     Boolean  @default(true)
+  metaDiaria Int     @default(20)   // atividades (questões + flashcards) por dia
+  dataProva  DateTime?              // contagem regressiva no painel
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -273,6 +275,9 @@ model HistoricoRespostaQuiz {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, quizId, tentativa])  // evita tentativa duplicada em respostas simultâneas
+  @@index([userId, createdAt])
+
   @@map("historico_respostas_quiz")
 }
 
@@ -285,6 +290,11 @@ model RevisaoFlashcard {
   flashcardId String
   acertou     Boolean  // true = "Sabia", false = "Não sabia"
   topicoId    String   // denormalizado
+  // Repetição espaçada (SM-2 simplificado)
+  facilidade     Float     @default(2.5)
+  intervaloDias  Int       @default(0)
+  repeticoes     Int       @default(0)
+  proximaRevisao DateTime?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -292,5 +302,6 @@ model RevisaoFlashcard {
   flashcard Flashcard @relation(fields: [flashcardId], references: [id], onDelete: Cascade)
 
   @@unique([userId, flashcardId])
+  @@index([userId, proximaRevisao])
   @@map("revisoes_flashcard")
 }

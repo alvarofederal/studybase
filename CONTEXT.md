@@ -27,7 +27,7 @@ Materia      id, nome, slug, descricao, icone, cor, ativa, ordem
           │   └─ OpcaoQuiz  id, texto, correta(bool), ordem, quizId
           └─ Flashcard    id, frente, verso(LongText), dica, ordem, topicoId
 
-User   id, nome, email, senha(bcrypt), role(ADMIN|USER), ativo
+User   id, nome, email, senha(bcrypt), role(ADMIN|USER), ativo, metaDiaria(@default 20), dataProva?
   ├─ RefreshToken        id, tokenHash(SHA-256), userId, expiresAt
   ├─ PasswordResetToken  id, tokenHash, userId, expiresAt, usado
   ├─ UserMateria         id, userId, materiaId, expiresAt(nullable)  @@unique([userId,materiaId])
@@ -57,9 +57,12 @@ GET    /api/auth/me                 retorna user autenticado
 ```
 POST   /api/estudo/solicitar         { materiaId }
 DELETE /api/estudo/revogar           { materiaId }
-POST   /api/estudo/responder-quiz    { quizId, opcaoId, correta, topicoId } — upsert + grava histórico
+POST   /api/estudo/responder-quiz    { quizId, opcaoId } — servidor decide `correta`/`topicoId` e valida acesso; upsert + histórico (transação)
 DELETE /api/estudo/responder-quiz    { quizId } — remove última resposta para nova tentativa (histórico preservado)
-POST   /api/estudo/revisar-flashcard { flashcardId, acertou, topicoId }
+POST   /api/estudo/revisar-flashcard { flashcardId, acertou } — grava e agenda próxima revisão (SM-2, lib/study/sm2.ts)
+GET    /api/estudo/simulado          ?materia=<slug|todas>&n=20&modo=aleatorio|erros — questões SEM gabarito
+POST   /api/estudo/simulado          { respostas:[{quizId,opcaoId|null}] } — corrige no servidor, grava histórico, devolve gabarito
+PATCH  /api/estudo/preferencias      { metaDiaria?, dataProva? }
 DELETE /api/estudo/reset-topico      { topicoId, tipo:'quiz'|'flashcard' } — reset em lote
 ```
 
@@ -114,6 +117,9 @@ GET        /api/context               snapshot Markdown do sistema (dinâmico)
 ### Área do Aluno
 ```
 /estudo               dashboard: matérias com acesso + solicitar novas
+/estudo/revisao       revisão espaçada: flashcards vencidos hoje (+ até 10 novos)
+/estudo/erros         caderno de erros + tópicos onde reforçar
+/estudo/simulado      simulado cronometrado (aleatório ou só erros), correção no servidor
 /estudo/perfil        perfil: matérias ativas/expiradas + revogar + alterar senha
 /estudo/[slug]        estudo interativo (blocos/tópicos/quiz/flashcards, progresso persistido)
 ```

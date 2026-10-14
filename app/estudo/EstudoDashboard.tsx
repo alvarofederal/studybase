@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import MateriasCliente from "./MateriasCliente";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import PainelEstudo from "@/components/estudo/PainelEstudo";
+import type { Painel } from "@/lib/study/painel";
 
 /* ── tipos ──────────────────────────────────────────────── */
 interface Topico {
@@ -178,6 +180,7 @@ interface Props {
   statusSolicitacao: Record<string, string>;
   expiresAtMap: Record<string, string | null>;
   acessoNegado: boolean;
+  painel: Painel;
 }
 
 export default function EstudoDashboard({
@@ -187,6 +190,7 @@ export default function EstudoDashboard({
   statusSolicitacao,
   expiresAtMap,
   acessoNegado,
+  painel,
 }: Props) {
   const [sidebarAberta, setSidebarAberta] = useState(false);
   const router = useRouter();
@@ -346,6 +350,8 @@ export default function EstudoDashboard({
                 </div>
               ))}
             </div>
+
+            {materiasComAcesso.length > 0 && <PainelEstudo painel={painel} />}
 
             {/* Matérias com acesso */}
             {materiasComAcesso.length > 0 ? (

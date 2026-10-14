@@ -100,7 +100,7 @@ export default function AdminContextPage() {
           <ol className="text-emerald-200/80 text-xs space-y-1 list-decimal list-inside">
             <li>Clique em <strong>Copiar tudo</strong></li>
             <li>Abra um novo chat no Claude, ChatGPT ou qualquer IA</li>
-            <li>Cole o conteúdo e diga: <em>"Este é o contexto do meu projeto StudyBase."</em></li>
+            <li>Cole o conteúdo e diga: <em>&quot;Este é o contexto do meu projeto StudyBase.&quot;</em></li>
             <li>A IA terá conhecimento completo da estrutura e conteúdo do banco</li>
           </ol>
         </div>

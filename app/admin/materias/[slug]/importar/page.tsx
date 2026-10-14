@@ -419,7 +419,7 @@ export default function ImportarPage() {
               <div>
                 <h2 className="text-base font-bold text-amber-300 mb-2">Faça o backup antes de continuar</h2>
                 <p className="text-sm text-amber-200/70 leading-relaxed">
-                  O modo <strong>"Substituir tudo"</strong> apaga permanentemente todos os dados da matéria.
+                  O modo <strong>&quot;Substituir tudo&quot;</strong> apaga permanentemente todos os dados da matéria.
                   Baixe o backup agora — você poderá usá-lo para <strong>restaurar via upload de JSON</strong> caso algo dê errado.
                 </p>
               </div>

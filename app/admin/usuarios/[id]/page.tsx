@@ -68,6 +68,7 @@ export default function PerfilUsuarioPage() {
     setCarregando(false);
   }, [id]);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial dos dados da página
   useEffect(() => { carregarDados(); }, [carregarDados]);
 
   function toggleMateria(materiaId: string) {
