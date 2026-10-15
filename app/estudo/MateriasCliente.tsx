@@ -21,16 +21,18 @@ interface Props {
   statusInicial: Record<string, string>;
   /** Matérias com acesso ativo (ocupam vaga junto com as solicitações pendentes) */
   vagasAtivas?: number;
+  /** Pedidos pendentes de matérias que não aparecem na lista (também ocupam vaga) */
+  pendentesOcultas?: number;
 }
 
 const LIMITE_MATERIAS = 3;
 
-export default function MateriasCliente({ materias, statusInicial, vagasAtivas = 0 }: Props) {
+export default function MateriasCliente({ materias, statusInicial, vagasAtivas = 0, pendentesOcultas = 0 }: Props) {
   const [status, setStatus]         = useState<Record<string, string>>(statusInicial);
   const [carregando, setCarregando] = useState<string | null>(null);
   const [erro, setErro]             = useState<string | null>(null);
 
-  const pendentes = materias.filter((m) => status[m.id] === "PENDENTE").length;
+  const pendentes = materias.filter((m) => status[m.id] === "PENDENTE").length + pendentesOcultas;
   const vagasUsadas = vagasAtivas + pendentes;
   const semVagas = vagasUsadas >= LIMITE_MATERIAS;
 

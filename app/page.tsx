@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { getResumoMaterias } from "@/lib/getMateriaData";
+import { materiaTemConteudo } from "@/lib/study/conteudo-materia";
 import { verifyAccessToken } from "@/lib/auth/jwt";
 import LandingUserButtons from "@/components/LandingUserButtons";
 import LandingGuestButtons from "@/components/LandingGuestButtons";
@@ -11,7 +12,7 @@ export default async function Home() {
   const todas = await getResumoMaterias();
 
   // Só aparecem matérias com conteúdo completo: tópicos, questões e flashcards
-  const materias = todas.filter((m) => m.topicos > 0 && m.quizzes > 0 && m.flashcards > 0);
+  const materias = todas.filter(materiaTemConteudo);
 
   // Verificar sessão para botões contextuais na navbar
   let sessao: { sub: string; role: string } | null = null;

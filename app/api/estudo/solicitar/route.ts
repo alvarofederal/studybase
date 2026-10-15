@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth/session";
+import { materiaTemConteudo } from "@/lib/study/conteudo-materia";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,22 @@ export async function POST(req: NextRequest) {
   const { materiaId } = await req.json();
   if (!materiaId) {
     return NextResponse.json({ error: "materiaId obrigatório." }, { status: 400 });
+  }
+
+  // Só é possível solicitar matérias ativas e com conteúdo (tópicos, questões e flashcards),
+  // as mesmas que a tela mostra — a API não confia que o cliente filtrou a lista.
+  const materia = await prisma.materia.findFirst({ where: { id: materiaId, ativa: true }, select: { id: true } });
+  if (!materia) {
+    return NextResponse.json({ error: "Esta matéria não está disponível para solicitação." }, { status: 404 });
+  }
+  const [topicos, quizzes, flashcards] = await Promise.all([
+    prisma.topico.count({ where: { bloco: { materiaId } } }),
+    // itens CE derivados servem só ao simulado; não contam como conteúdo da matéria
+    prisma.quiz.count({ where: { origemId: null, topico: { bloco: { materiaId } } } }),
+    prisma.flashcard.count({ where: { topico: { bloco: { materiaId } } } }),
+  ]);
+  if (!materiaTemConteudo({ topicos, quizzes, flashcards })) {
+    return NextResponse.json({ error: "Esta matéria ainda não está disponível para solicitação." }, { status: 404 });
   }
 
   const agora = new Date();

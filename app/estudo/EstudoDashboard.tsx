@@ -181,6 +181,8 @@ interface Props {
   materiasComAcesso: Materia[];
   materiasParaSolicitar: Materia[];
   statusSolicitacao: Record<string, string>;
+  /** Pedidos pendentes de matérias fora da lista (vazias): ainda ocupam vaga no limite de 3 */
+  pendentesOcultas?: number;
   expiresAtMap: Record<string, string | null>;
   acessoNegado: boolean;
   painel: Painel;
@@ -191,6 +193,7 @@ export default function EstudoDashboard({
   materiasComAcesso,
   materiasParaSolicitar,
   statusSolicitacao,
+  pendentesOcultas = 0,
   expiresAtMap,
   acessoNegado,
   painel,
@@ -439,6 +442,7 @@ export default function EstudoDashboard({
                   }))}
                   statusInicial={statusSolicitacao}
                   vagasAtivas={materiasComAcesso.length}
+                  pendentesOcultas={pendentesOcultas}
                 />
               </section>
             )}

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { verifyAccessToken } from "@/lib/auth/jwt";
 import prisma from "@/lib/prisma";
 import { carregarPainel } from "@/lib/study/painel";
+import { contarConteudo, materiaTemConteudo } from "@/lib/study/conteudo-materia";
 import EstudoDashboard from "./EstudoDashboard";
 
 export const dynamic = "force-dynamic";
@@ -93,7 +94,17 @@ export default async function EstudoIndexPage({ searchParams }: PageProps) {
   const sp = await searchParams;
 
   const materiasComAcesso     = todasMaterias.filter((m) => idsAtivos.has(m.id));
-  const materiasParaSolicitar = todasMaterias.filter((m) => !idsAtivos.has(m.id));
+  // Matérias vazias (sem tópicos, questões ou flashcards) não aparecem para solicitação
+  const materiasParaSolicitar = todasMaterias.filter(
+    (m) => !idsAtivos.has(m.id) && materiaTemConteudo(contarConteudo(m.blocos)),
+  );
+
+  // Pedidos pendentes de matérias que ficaram fora da lista continuam ocupando vaga no servidor;
+  // a tela precisa contá-los para o aviso de "3 vagas usadas" não ficar errado.
+  const idsVisiveis = new Set(materiasParaSolicitar.map((m) => m.id));
+  const pendentesOcultas = Object.entries(statusSolicitacao).filter(
+    ([id, status]) => status === "PENDENTE" && !idsAtivos.has(id) && !idsVisiveis.has(id),
+  ).length;
 
   return (
     <EstudoDashboard
@@ -101,6 +112,7 @@ export default async function EstudoIndexPage({ searchParams }: PageProps) {
       materiasComAcesso={materiasComAcesso}
       materiasParaSolicitar={materiasParaSolicitar}
       statusSolicitacao={statusSolicitacao}
+      pendentesOcultas={pendentesOcultas}
       expiresAtMap={expiresAtMap}
       acessoNegado={sp.acesso === "negado"}
       painel={painel}
