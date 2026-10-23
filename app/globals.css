@@ -276,3 +276,11 @@ html.light .glass {
 
 /* Texto branco sobre o céu continua branco mesmo no tema claro */
 html.light .sh-landing .text-white { color: #ffffff; }
+
+/* Comentário de IA (tons de azul) no tema claro */
+html.light .text-sky-300 { color: #0369a1; }
+html.light .text-sky-400\/70 { color: rgb(2 132 199 / 0.8); }
+html.light .text-sky-500\/60 { color: rgb(2 132 199 / 0.6); }
+html.light .bg-sky-950\/20 { background-color: rgb(224 242 254 / 0.6); }
+html.light .border-sky-800\/40,
+html.light .border-sky-800\/30 { border-color: rgb(125 211 252 / 0.7); }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth/session";
+import { comentarioVisivel } from "@/lib/ia/comentario-quiz";
 
 export const dynamic = "force-dynamic";
 
@@ -33,6 +34,7 @@ export async function GET(_req: NextRequest, { params }: Params) {
           pergunta: true,
           explicacao: true,
           opcoes: { orderBy: { ordem: "asc" }, select: { id: true, texto: true, correta: true, ordem: true } },
+          comentarioIa: { select: { texto: true, revisado: true, alertaGabarito: true, oculto: true } },
         },
       },
       flashcards: { orderBy: { ordem: "asc" }, select: { id: true, frente: true, verso: true, dica: true } },
@@ -56,7 +58,12 @@ export async function GET(_req: NextRequest, { params }: Params) {
     if (!acesso) return NextResponse.json({ error: "Sem acesso a esta matéria." }, { status: 403 });
   }
 
-  const { bloco: _bloco, publicado: _publicado, ...dados } = topico;
+  const { bloco: _bloco, publicado: _publicado, quizzes, ...dados } = topico;
   void _bloco; void _publicado;
-  return NextResponse.json(dados, { headers: { "Cache-Control": "private, max-age=60" } });
+  // Comentário de IA: só o que pode ser mostrado ao aluno (RF-IA-05), sem os campos de moderação
+  const quizzesVisiveis = quizzes.map(({ comentarioIa, ...q }) => ({
+    ...q,
+    comentarioIa: comentarioVisivel(comentarioIa) ? { texto: comentarioIa!.texto, revisado: comentarioIa!.revisado } : null,
+  }));
+  return NextResponse.json({ ...dados, quizzes: quizzesVisiveis }, { headers: { "Cache-Control": "private, max-age=60" } });
 }

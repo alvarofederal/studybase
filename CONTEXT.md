@@ -36,6 +36,10 @@ User   id, nome, email, senha(bcrypt), role(ADMIN|USER), ativo, metaDiaria(@defa
   ├─ RespostaQuiz          id, userId, quizId, opcaoId, correta(bool), topicoId  @@unique([userId,quizId])
   ├─ HistoricoRespostaQuiz id, userId, quizId, opcaoId, correta(bool), topicoId, tentativa(Int)
   └─ RevisaoFlashcard      id, userId, flashcardId, acertou(bool), topicoId     @@unique([userId,flashcardId])
+
+ComentarioIaQuiz  id, quizId(unique), texto, alertaGabarito, motivoAlerta?, modelo, revisado, oculto  — comentário de IA (spec/01)
+LoteComentarioIa  id, batchId(unique), materiaId, total, status(ENVIADO|COLETADO|FALHOU), sucesso, falhas
+ComentarioQuiz / ComentarioCurtida / ComentarioDenuncia — discussão dos alunos nas questões
 ```
 
 ---
@@ -65,6 +69,9 @@ GET    /api/estudo/simulado          ?materia=<slug|todas>&n=20&modo=aleatorio|e
 POST   /api/estudo/simulado          { respostas:[{quizId,opcaoId|null}], valorItem? } — corrige no servidor, grava histórico, devolve gabarito + `cebraspe` (saldo = acertos − erros, pureza/taxa da caça)
 PATCH  /api/estudo/preferencias      { metaDiaria?, dataProva? }
 DELETE /api/estudo/reset-topico      { topicoId, tipo:'quiz'|'flashcard' } — reset em lote
+GET    /api/estudo/topico/[id]       conteúdo completo de um tópico (questões, cards, comentário de IA visível)
+GET    /api/estudo/questoes          banco: ?materia&bloco&dificuldade&tipo&situacao=todas|nao-respondidas|erradas|certas&pagina
+GET/POST /api/estudo/comentarios     discussão de uma questão (?quizId) / novo comentário
 ```
 
 ### Admin
@@ -77,6 +84,11 @@ GET    /api/admin/usuarios/[id]
 PUT    /api/admin/usuarios/[id]      { ativo, role }
 GET    /api/admin/stats              dashboard de desempenho (QuestaoStat, TopicoStat, MateriaStat, StatsOverview)
 POST   /api/admin/quiz/import        importação em lote { topicoId, questoes[{pergunta,opcaoA-D,correta,explicacao?,dificuldade?,tags?}] }
+GET    /api/admin/comentarios-ia     situação da IA, resumo por matéria, lotes, itens (?materiaId&filtro&pagina)
+POST   /api/admin/comentarios-ia/gerar               { quizId } — gera/regenera um comentário (requer ANTHROPIC_API_KEY)
+PATCH  /api/admin/comentarios-ia/[id]                { texto?, revisado?, oculto? }
+POST   /api/admin/comentarios-ia/lotes               { materiaId } — envia lote à Message Batches API
+POST   /api/admin/comentarios-ia/lotes/[id]/coletar  lê o lote e grava os comentários
 ```
 
 ### Conteúdo (CRUD completo)
@@ -121,6 +133,8 @@ GET        /api/context               snapshot Markdown do sistema (dinâmico)
 /estudo/revisao       revisão espaçada: flashcards vencidos hoje (+ até 10 novos)
 /estudo/erros         caderno de erros + tópicos onde reforçar
 /estudo/simulado      simulado cronometrado (aleatório ou só erros), correção no servidor
+/estudo/desempenho    acerto por matéria e bloco, evolução semanal, pontos fracos
+/estudo/questoes      banco de questões com filtros (matéria, bloco, dificuldade, tipo, situação)
 /estudo/perfil        perfil: matérias ativas/expiradas + revogar + alterar senha
 /estudo/[slug]        estudo interativo (blocos/tópicos/quiz/flashcards, progresso persistido)
 ```
@@ -137,6 +151,8 @@ GET        /api/context               snapshot Markdown do sistema (dinâmico)
 /admin/usuarios/[id]            perfil + seletor manual de matérias
 /admin/solicitacoes             aprovações (Pendentes / Aprovadas / Rejeitadas)
 /admin/stats                    dashboard de estatísticas de desempenho (questões, flashcards, por matéria)
+/admin/comentarios              moderação da discussão dos alunos
+/admin/comentarios-ia           geração em lote, revisão e alertas de gabarito dos comentários de IA
 /admin/context                  gera snapshot /api/context
 ```
 

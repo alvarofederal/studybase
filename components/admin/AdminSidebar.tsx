@@ -58,6 +58,7 @@ export default function AdminSidebar() {
     { href: "/admin/solicitacoes", label: "Solicitações", icon: "🔔", exact: false, badge: pendentes },
     { href: "/admin/usuarios",     label: "Usuários",     icon: "👥", exact: false, badge: 0 },
     { href: "/admin/comentarios",  label: "Comentários",  icon: "💬", exact: false, badge: 0 },
+    { href: "/admin/comentarios-ia", label: "Comentários IA", icon: "🤖", exact: false, badge: 0 },
     { href: "/admin/stats",        label: "Estatísticas", icon: "📊", exact: false, badge: 0 },
     { href: "/admin/context",      label: "Contexto IA",  icon: "🤖", exact: false, badge: 0 },
   ];

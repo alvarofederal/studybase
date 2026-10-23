@@ -113,6 +113,20 @@ export default function PainelEstudo({ painel }: { painel: Painel }) {
             <span className="text-sm font-semibold text-white">⚖️ Simulado CEBRASPE</span>
             <span className="text-xs text-gray-500">→</span>
           </Link>
+          <Link
+            href="/estudo/questoes"
+            className="flex items-center justify-between bg-gray-900 border border-gray-800 hover:border-teal-500/50 rounded-2xl px-4 py-3 transition-colors"
+          >
+            <span className="text-sm font-semibold text-white">🗂️ Banco de questões</span>
+            <span className="text-xs text-gray-500">filtrar e praticar →</span>
+          </Link>
+          <Link
+            href="/estudo/desempenho"
+            className="flex items-center justify-between bg-gray-900 border border-gray-800 hover:border-amber-500/50 rounded-2xl px-4 py-3 transition-colors"
+          >
+            <span className="text-sm font-semibold text-white">📈 Desempenho</span>
+            <span className="text-xs text-gray-500">acerto por assunto →</span>
+          </Link>
         </div>
       </div>
 

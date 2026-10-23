@@ -24,9 +24,10 @@ model Materia {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  blocos       Bloco[]
-  userMaterias UserMateria[]
-  solicitacoes SolicitacaoMateria[]
+  blocos            Bloco[]
+  userMaterias      UserMateria[]
+  solicitacoes      SolicitacaoMateria[]
+  lotesComentarioIa LoteComentarioIa[]
 
   @@map("materias")
 }
@@ -90,11 +91,12 @@ model Quiz {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
 
-  topico      Topico                  @relation(fields: [topicoId], references: [id], onDelete: Cascade)
-  opcoes      OpcaoQuiz[]
-  respostas   RespostaQuiz[]
-  historicos  HistoricoRespostaQuiz[]
-  comentarios ComentarioQuiz[]
+  topico       Topico                  @relation(fields: [topicoId], references: [id], onDelete: Cascade)
+  opcoes       OpcaoQuiz[]
+  respostas    RespostaQuiz[]
+  historicos   HistoricoRespostaQuiz[]
+  comentarios  ComentarioQuiz[]
+  comentarioIa ComentarioIaQuiz?
 
   @@map("quizzes")
 }
@@ -369,4 +371,49 @@ model ComentarioDenuncia {
 
   @@unique([comentarioId, userId])
   @@map("comentario_denuncias")
+}
+
+// ─────────────────────────────────────────────
+// COMENTÁRIO COM IA — gerado uma vez por questão da trilha (spec/01 §8, ADR-01)
+// ─────────────────────────────────────────────
+model ComentarioIaQuiz {
+  id             String   @id @default(cuid())
+  quizId         String   @unique
+  texto          String   @db.Text // Markdown simples
+  alertaGabarito Boolean  @default(false) // a IA suspeita de erro no gabarito (fica retido até revisão)
+  motivoAlerta   String?  @db.Text
+  modelo         String
+  revisado       Boolean  @default(false) // revisado pela equipe
+  oculto         Boolean  @default(false) // oculto aos alunos
+  geradoEm       DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  quiz Quiz @relation(fields: [quizId], references: [id], onDelete: Cascade)
+
+  @@index([alertaGabarito, revisado])
+  @@map("comentarios_ia_quiz")
+}
+
+enum StatusLoteIa {
+  ENVIADO
+  COLETADO
+  FALHOU
+}
+
+// Lote enviado à Message Batches API (50% do preço) — ADR-02
+model LoteComentarioIa {
+  id         String       @id @default(cuid())
+  batchId    String       @unique
+  materiaId  String
+  total      Int
+  status     StatusLoteIa @default(ENVIADO)
+  sucesso    Int          @default(0)
+  falhas     Int          @default(0)
+  criadoEm   DateTime     @default(now())
+  coletadoEm DateTime?
+
+  materia Materia @relation(fields: [materiaId], references: [id], onDelete: Cascade)
+
+  @@index([materiaId, status])
+  @@map("lotes_comentario_ia")
 }

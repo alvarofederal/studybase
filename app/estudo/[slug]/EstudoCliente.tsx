@@ -5,11 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import MarkdownRenderer from "@/components/MarkdownRenderer";
 import ComentariosQuestao from "@/components/estudo/ComentariosQuestao";
+import ComentarioIa from "@/components/estudo/ComentarioIa";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 /* ─── Tipos ─────────────────────────────────────────────────────────────── */
 type Opcao     = { id: string; texto: string; correta: boolean; ordem: number };
-type Quiz      = { id: string; pergunta: string; explicacao: string | null; opcoes: Opcao[] };
+type Quiz      = { id: string; pergunta: string; explicacao: string | null; opcoes: Opcao[]; comentarioIa?: { texto: string; revisado: boolean } | null };
 type Flashcard = { id: string; frente: string; verso: string; dica: string | null };
 type Topico    = { id: string; titulo: string; slug: string; conteudo: string; resumo: string | null; quizzes: Quiz[]; flashcards: Flashcard[] };
 type Bloco     = { id: string; nome: string; slug: string; topicos: Topico[] };
@@ -804,6 +805,9 @@ export default function EstudoCliente({
                                       💡 {quiz.explicacao}
                                     </div>
                                   )}
+
+                                  {/* Comentário gerado por IA (RF-IA-04) */}
+                                  {quiz.comentarioIa && <ComentarioIa {...quiz.comentarioIa} />}
 
                                   {/* Discussão da questão (só depois de responder) */}
                                   <ComentariosQuestao quizId={quiz.id} />
